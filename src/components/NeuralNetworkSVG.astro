@@ -25,9 +25,23 @@
     </div>
 
     <div class="nn-viz-wrapper" data-nn="viz-wrapper">
-      <!-- The black box overlay that fades away -->
+      <!-- SVG circle mask overlay -->
       <div class="nn-blackbox-overlay" data-nn="blackbox" aria-hidden="true">
-        <span class="nn-blackbox-label">?</span>
+        <svg class="nn-mask-svg" viewBox="0 0 900 560" preserveAspectRatio="xMidYSlice meet">
+          <defs>
+            <mask id="nn-reveal-mask" maskUnits="userSpaceOnUse" x="0" y="0" width="900" height="560">
+              <rect width="900" height="560" fill="white"/>
+              <circle id="nn-reveal-circle" cx="450" cy="280" r="0" fill="black"/>
+            </mask>
+            <radialGradient id="nn-mask-edge-grad">
+              <stop offset="85%" stop-color="black"/>
+              <stop offset="100%" stop-color="white"/>
+            </radialGradient>
+          </defs>
+          <!-- Dark overlay with circle cut out -->
+          <rect width="900" height="560" fill="rgba(10, 10, 20, 0.97)" mask="url(#nn-reveal-mask)"/>
+        </svg>
+        <span class="nn-blackbox-label" data-nn="blackbox-label">?</span>
       </div>
 
       <svg
@@ -320,18 +334,18 @@
     position: absolute;
     inset: 0;
     z-index: 10;
-    background: linear-gradient(
-      135deg,
-      rgba(10, 10, 20, 0.97) 0%,
-      rgba(15, 15, 30, 0.95) 50%,
-      rgba(10, 10, 20, 0.97) 100%
-    );
     display: flex;
     align-items: center;
     justify-content: center;
     border-radius: 12px;
-    backdrop-filter: blur(8px);
-    transition: opacity 0.6s ease;
+    overflow: hidden;
+  }
+
+  .nn-mask-svg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
   }
 
   .nn-blackbox-label {
@@ -340,6 +354,8 @@
     color: rgba(148, 163, 184, 0.25);
     user-select: none;
     letter-spacing: 0.05em;
+    z-index: 1;
+    transition: opacity 0.4s ease;
   }
 
   /* === SVG === */
@@ -514,7 +530,7 @@
     .nn-pulse {
       display: none;
     }
-    .nn-blackbox-overlay {
+    .nn-blackbox-label {
       transition: none;
     }
   }
@@ -565,6 +581,8 @@
     const heading = section.querySelector('[data-nn="heading"]') as HTMLElement;
     const desc = section.querySelector('[data-nn="desc"]') as HTMLElement;
     const blackbox = section.querySelector('[data-nn="blackbox"]') as HTMLElement;
+    const blackboxLabel = section.querySelector('[data-nn="blackbox-label"]') as HTMLElement;
+    const revealCircle = document.getElementById('nn-reveal-circle');
     const probBars = section.querySelectorAll('[data-nn-prob]');
     const probTexts = section.querySelectorAll('.nn-prob-text');
     const probHeading = section.querySelector('.nn-prob-heading');
@@ -592,7 +610,7 @@
 
     // Set initial states (hidden)
     gsap.set([heading, desc], { opacity: 0, y: 20 });
-    gsap.set(blackbox, { opacity: 1 });
+    gsap.set(revealCircle, { attr: { r: 0 } });
     blackbox.style.pointerEvents = 'auto';
 
     // Build repeating pulse timelines (paused initially)
@@ -649,21 +667,31 @@
           });
         }
 
-        // --- Phase 2: black box dissolves (0.10 - 0.25) ---
+        // --- Phase 2: black box iris reveal (0.10 - 0.25) ---
         if (p >= 0.10) {
           once('blackbox', () => {
-            gsap.to(blackbox, {
-              opacity: 0,
-              duration: 0.8,
+            // Fade out the "?" label
+            gsap.to(blackboxLabel, { opacity: 0, duration: 0.3, ease: 'power2.in' });
+            // Expand the reveal circle
+            gsap.to(revealCircle, {
+              attr: { r: 600 },
+              duration: 1.2,
               ease: 'power2.inOut',
               onComplete: () => { blackbox.style.pointerEvents = 'none'; },
             });
           });
         } else {
           unonce('blackbox', () => {
-            gsap.to(blackbox, {
+            // Shrink the circle back
+            gsap.to(revealCircle, {
+              attr: { r: 0 },
+              duration: 0.6,
+              ease: 'power2.in',
+            });
+            gsap.to(blackboxLabel, {
               opacity: 1,
-              duration: 0.4,
+              duration: 0.3,
+              delay: 0.3,
               onComplete: () => { blackbox.style.pointerEvents = 'auto'; },
             });
           });

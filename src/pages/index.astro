@@ -172,6 +172,7 @@ import DiffusionViz from "../components/DiffusionViz.astro";
       </p>
     </div>
 
+    <p class="viz-instruction">Scroll to see how text is broken into tokens</p>
     <TokenViz />
 
     <!-- EMBEDDINGS -->
@@ -185,6 +186,7 @@ import DiffusionViz from "../components/DiffusionViz.astro";
       </p>
     </div>
 
+    <p class="viz-instruction">Scroll to explore meaning space</p>
     <EmbeddingViz />
 
     <!-- ATTENTION -->
@@ -198,6 +200,7 @@ import DiffusionViz from "../components/DiffusionViz.astro";
       </p>
     </div>
 
+    <p class="viz-instruction">Scroll to see attention in action</p>
     <AttentionViz />
 
     <!-- NEURAL NETWORK / TRANSFORMER -->
@@ -211,6 +214,7 @@ import DiffusionViz from "../components/DiffusionViz.astro";
       </p>
     </div>
 
+    <p class="viz-instruction">Scroll to open the black box</p>
     <NeuralNetworkSVG />
   </section>
 
@@ -230,6 +234,7 @@ import DiffusionViz from "../components/DiffusionViz.astro";
       </p>
     </div>
 
+    <p class="viz-instruction">Scroll to watch noise become an image</p>
     <DiffusionViz />
   </section>
 
@@ -429,6 +434,19 @@ import DiffusionViz from "../components/DiffusionViz.astro";
       });
     });
 
+    // --- Instruction panel fade-ins ---
+    gsap.utils.toArray(".viz-instruction").forEach((el: any) => {
+      if (prefersReduced) return;
+      gsap.from(el, {
+        opacity: 0, y: 10, duration: 0.5,
+        scrollTrigger: {
+          trigger: el,
+          start: "top 88%",
+          toggleActions: "play none none reverse",
+        },
+      });
+    });
+
     // --- Footer fade-in ---
     if (!prefersReduced) {
       gsap.from(".footer", {
@@ -457,6 +475,37 @@ import DiffusionViz from "../components/DiffusionViz.astro";
 
 <style>
   /* Page-specific styles that supplement global.css */
+
+  /* ── Section gradient blending (Reuters 0%–90% pattern) ── */
+
+  /* Iceberg overview — sky fading to deep water */
+  #main-content {
+    background: linear-gradient(
+      180deg,
+      var(--bg-primary) 0% 85%,
+      #0a1628
+    );
+  }
+
+  /* Deep dive chapter — deep blue to slightly lighter */
+  [aria-label="How LLMs work — deep dive"] {
+    background: linear-gradient(
+      180deg,
+      #0a1628 0%,
+      var(--bg-secondary) 10% 90%,
+      #0d1525
+    );
+  }
+
+  /* Beyond text section — transition to purple-tinted dark */
+  [aria-label="Beyond text — image generation"] {
+    background: linear-gradient(
+      180deg,
+      #0d1525 0%,
+      rgba(15, 12, 28, 0.95) 10% 90%,
+      var(--bg-primary)
+    );
+  }
 
   /* Misconceptions closing section — subtle dark gradient */
   #misconceptions-section {
@@ -503,21 +552,17 @@ import DiffusionViz from "../components/DiffusionViz.astro";
     padding-bottom: 20vh;
   }
 
-  /* Smooth gradient transitions for deep-dive chapter */
-  #ch-beneath {
-    background: radial-gradient(
-      ellipse at 50% 100%,
-      rgba(14, 165, 233, 0.04) 0%,
-      transparent 60%
-    );
-  }
-
-  /* Diffusion section gets a subtle dark treatment */
-  #ch-diffusion {
-    background: radial-gradient(
-      ellipse at 50% 100%,
-      rgba(167, 139, 250, 0.03) 0%,
-      transparent 60%
-    );
+  /* ── Instruction panels before visualizations ── */
+  .viz-instruction {
+    text-align: center;
+    padding: var(--space-md) var(--space-lg);
+    margin: 0 auto var(--space-lg);
+    max-width: 28rem;
+    font-size: var(--font-size-sm, 0.875rem);
+    color: var(--text-muted);
+    letter-spacing: 0.02em;
+    opacity: 0.7;
+    border-top: 1px solid rgba(255, 255, 255, 0.04);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
   }
 </style>

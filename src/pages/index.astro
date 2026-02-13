@@ -7,6 +7,7 @@ import AttentionViz from "../components/AttentionViz.astro";
 import EmbeddingViz from "../components/EmbeddingViz.astro";
 import NeuralNetworkSVG from "../components/NeuralNetworkSVG.astro";
 import DiffusionViz from "../components/DiffusionViz.astro";
+import RLHFViz from "../components/RLHFViz.astro";
 ---
 
 <Layout title="The AI Iceberg — Understanding How LLMs Work">
@@ -22,7 +23,7 @@ import DiffusionViz from "../components/DiffusionViz.astro";
     <p class="label" id="hero-label">Leon Furze's AI Iceberg</p>
     <h1 id="hero-title">Understanding How<br />AI Really Works</h1>
     <p class="subtitle" id="hero-subtitle">
-      Scroll down to dive beneath the surface of ChatGPT, exploring the hidden
+      Scroll down to dive beneath the surface of AI, exploring the hidden
       layers of large language models — from the applications you see to the
       vast ocean of training data you don't.
     </p>
@@ -40,8 +41,8 @@ import DiffusionViz from "../components/DiffusionViz.astro";
       <span class="chapter-number">The Big Picture</span>
       <h2 id="ch-iceberg-title">The AI Iceberg</h2>
       <p id="ch-iceberg-desc">
-        Most people interact with AI through polished applications like ChatGPT.
-        But like an iceberg, what you see is only a tiny fraction of what's really
+        Most people interact with AI through polished applications like ChatGPT,
+        Claude, or Gemini. But like an iceberg, what you see is only a tiny fraction of what's really
         there. The vast majority — the training data, the model architecture, the
         hidden processes — lies beneath the surface.
       </p>
@@ -57,9 +58,9 @@ import DiffusionViz from "../components/DiffusionViz.astro";
           <h3>Layer 3: The Application</h3>
           <p>
             Picture a carefully sculpted snowman sitting on top of the iceberg.
-            This represents an application like ChatGPT — built on top of the
-            general LLM, just as ChatGPT is a version of the GPT model
-            fine-tuned specifically for conversational tasks.
+            This represents an application like ChatGPT, Claude, or Gemini —
+            built on top of a general LLM and fine-tuned specifically for
+            conversational tasks.
           </p>
           <p>
             The chatbot layer includes <strong>system messages</strong> (rules
@@ -122,6 +123,14 @@ import DiffusionViz from "../components/DiffusionViz.astro";
             issues</strong> that can influence the dataset and, subsequently,
             the behaviour of the LLM.
           </p>
+          <blockquote class="pull-quote" id="bender-quote">
+            <p>
+              &ldquo;A language model is a stochastic parrot &mdash; it
+              haphazardly stitches together sequences of linguistic forms
+              from its training data, without any reference to meaning.&rdquo;
+            </p>
+            <cite>&mdash; Emily Bender et al., &ldquo;On the Dangers of Stochastic Parrots&rdquo; (2021)</cite>
+          </blockquote>
         </div>
       </div>
     </div>
@@ -157,8 +166,9 @@ import DiffusionViz from "../components/DiffusionViz.astro";
         "understand" your message. It predicts what comes next.
       </p>
       <p id="next-token-p3" style="color: var(--text-muted); font-style: italic; font-size: 0.95rem;">
-        As Luis Serrano writes: "The first time I found out that transformers
-        build text one word at a time, I couldn't believe it."
+        As AI researcher Gary Marcus puts it, large language models are
+        &ldquo;glorified autocomplete&rdquo; &mdash; impressive in their output,
+        but fundamentally just predicting the next word.
       </p>
     </div>
 
@@ -216,6 +226,60 @@ import DiffusionViz from "../components/DiffusionViz.astro";
 
     <p class="viz-instruction">Scroll to open the black box</p>
     <NeuralNetworkSVG />
+
+    <!-- RLHF -->
+    <div class="chapter-divider" id="ch-rlhf">
+      <span class="chapter-number">The Final Step</span>
+      <h2>RLHF: Teaching the Model Manners</h2>
+      <p>
+        A raw LLM is powerful but unruly — it might generate toxic content,
+        confidently state falsehoods, or ignore your actual question. That's
+        where <strong>RLHF</strong> comes in.
+      </p>
+    </div>
+
+    <div class="full-section" id="rlhf-section">
+      <h3 id="rlhf-title">Reinforcement Learning from Human Feedback</h3>
+      <p id="rlhf-p1">
+        After the base model is trained on trillions of tokens, human reviewers
+        step in. They're shown pairs of model outputs and asked: <em>which
+        response is more helpful, more accurate, less harmful?</em> These
+        preferences are used to train a <strong>reward model</strong> — a
+        separate system that learns to score outputs the way humans would.
+      </p>
+      <p id="rlhf-p2">
+        The LLM is then fine-tuned using reinforcement learning to maximise
+        that reward score. Over many iterations, the model learns to produce
+        responses that are helpful, honest, and safe — not because it
+        understands these concepts, but because it's been optimised to match
+        human preferences. This is what turns a raw text predictor into a
+        usable assistant like ChatGPT or Claude.
+      </p>
+      <p id="rlhf-p3" style="font-size: 0.95rem; color: var(--text-muted); font-style: italic;">
+        RLHF is the "snowman sculptor" — the process that shapes the raw
+        iceberg into the polished application sitting on top.
+      </p>
+      <p id="rlhf-p4">
+        But there&rsquo;s a hidden cost. The humans doing this work &mdash; many
+        employed through outsourcing firms in Kenya, the Philippines, and other
+        countries &mdash; are often paid less than $2 per hour to review and classify
+        content, including violent, sexual, and deeply disturbing material. A 2023
+        <em>Time</em> investigation revealed that workers labelling data for ChatGPT
+        described the work as &ldquo;torture.&rdquo; This is the invisible human
+        labour that makes AI &ldquo;alignment&rdquo; possible.
+      </p>
+      <blockquote class="pull-quote" id="crawford-quote">
+        <p>
+          &ldquo;Artificial intelligence is neither artificial nor intelligent.
+          It is both embodied and material, made from natural resources, fuel,
+          human labor, infrastructures, logistics, histories, and
+          classifications.&rdquo;
+        </p>
+        <cite>&mdash; Kate Crawford, <em>Atlas of AI</em> (2021)</cite>
+      </blockquote>
+    </div>
+
+    <RLHFViz />
   </section>
 
   <!-- ============================================ -->
@@ -243,24 +307,47 @@ import DiffusionViz from "../components/DiffusionViz.astro";
   <!-- ============================================ -->
   <section class="full-section" id="misconceptions-section" aria-label="Common misconceptions">
     <span class="label">A Critical Reminder</span>
-    <h2 id="misconceptions-title">It Doesn't Think. It Predicts.</h2>
+    <h2 id="misconceptions-title">Chatbots Don&rsquo;t Make Sense, They Make Words</h2>
     <p id="misconceptions-p1">
-      The terminology we use for AI — "learns," "thinks," "understands" — is
-      what researchers call <strong>wishful mnemonics</strong>. These words
-      describe what the system <em>appears</em> to do, not what it actually
-      does. An LLM is a sophisticated statistical prediction engine, not a mind.
+      The terminology we use for AI &mdash; &ldquo;learns,&rdquo; &ldquo;thinks,&rdquo;
+      &ldquo;understands&rdquo; &mdash; is what researcher Melanie Mitchell calls
+      <strong>wishful mnemonics</strong>. These words describe what the system
+      <em>appears</em> to do, not what it actually does. An LLM is a sophisticated
+      statistical prediction engine, not a mind.
     </p>
     <p id="misconceptions-p2">
-      That's why Leon Furze's iceberg metaphor is deliberately chosen: "I'm
-      deliberately avoiding any kind of analogy that represents the AI as
-      magical, mythical, human, or godlike — we've seen enough of them." The
-      iceberg emphasizes hidden infrastructure, not hidden intelligence.
+      That&rsquo;s why Leon Furze chose the iceberg metaphor: &ldquo;I&rsquo;m
+      deliberately avoiding any kind of analogy that represents the AI as magical,
+      mythical, human, or godlike &mdash; we&rsquo;ve seen enough of them.&rdquo;
+      The iceberg emphasises hidden infrastructure, not hidden intelligence.
     </p>
-    <p id="misconceptions-p3" style="font-size: 0.95rem; color: var(--text-muted);">
-      Understanding what's beneath the surface — the data, the architecture,
-      the biases — is the first step toward using these tools critically and
-      responsibly.
+    <p id="misconceptions-p3">
+      What about &ldquo;reasoning&rdquo; models like OpenAI&rsquo;s o1 or DeepSeek-R1?
+      These models are trained to generate a <strong>chain of thought</strong> &mdash;
+      working through a problem step by step before answering. But the mechanism is
+      identical: they&rsquo;re still predicting the next token. The &ldquo;reasoning&rdquo;
+      is just more tokens &mdash; the model has learned that writing out intermediate
+      steps leads to better final answers. It&rsquo;s autocomplete that&rsquo;s been
+      taught to show its working.
     </p>
+  </section>
+
+  <!-- ============================================ -->
+  <!-- CTA: BOOK / MAILING LIST                     -->
+  <!-- ============================================ -->
+  <section class="cta-section" id="cta-section" aria-label="Subscribe for updates">
+    <div class="cta-inner">
+      <span class="label">Coming Q4 2027</span>
+      <h2 class="cta-heading" id="cta-heading">Practical AI Strategies 2</h2>
+      <p class="cta-subtitle">The Critical Guide to GenAI in Education</p>
+      <p class="cta-body" id="cta-body">
+        Stay ahead of the curve. Subscribe for articles, resources, and updates
+        on understanding generative AI &mdash; delivered straight to your inbox.
+      </p>
+      <a href="https://subscribe.leonfurze.com/" class="cta-button" target="_blank" rel="noopener">
+        Subscribe to the mailing list
+      </a>
+    </div>
   </section>
 
   <!-- ============================================ -->
@@ -390,11 +477,9 @@ import DiffusionViz from "../components/DiffusionViz.astro";
       switch (stepName) {
         case "snowman":
           gsap.to("#label-applications", { opacity: 1, duration, ease });
-          gsap.to("#iceberg-snowman", { filter: "drop-shadow(0 0 8px rgba(56,189,248,0.3))", duration });
           break;
         case "llm":
           gsap.to("#label-llm", { opacity: 1, duration, ease });
-          gsap.to("#iceberg-snowman", { filter: "none", duration: duration * 0.5 });
           break;
         case "dataset":
           gsap.to("#label-dataset", { opacity: 1, duration, ease });
@@ -402,9 +487,22 @@ import DiffusionViz from "../components/DiffusionViz.astro";
         case "ocean":
           gsap.to("#label-ocean", { opacity: 1, duration, ease });
           gsap.to("#shark-labels", { opacity: 1, duration, ease, delay: 0.2 });
-          gsap.to(".shark-group", { opacity: 0.6, duration, ease });
           break;
       }
+    }
+
+    // --- RLHF section ---
+    if (!prefersReduced) {
+      ["#rlhf-title", "#rlhf-p1", "#rlhf-p2", "#rlhf-p3", "#rlhf-p4", "#crawford-quote"].forEach((sel, i) => {
+        gsap.from(sel, {
+          opacity: 0, y: 20, duration: 0.6,
+          scrollTrigger: {
+            trigger: sel,
+            start: "top 82%",
+            toggleActions: "play none none reverse",
+          },
+        });
+      });
     }
 
     // --- Misconceptions section ---
@@ -447,6 +545,38 @@ import DiffusionViz from "../components/DiffusionViz.astro";
       });
     });
 
+    // --- Bender pull quote ---
+    if (!prefersReduced) {
+      gsap.from("#bender-quote", {
+        opacity: 0, y: 15, duration: 0.6,
+        scrollTrigger: {
+          trigger: "#bender-quote",
+          start: "top 80%",
+          toggleActions: "play none none reverse",
+        },
+      });
+    }
+
+    // --- CTA section ---
+    if (!prefersReduced) {
+      gsap.from("#cta-heading", {
+        opacity: 0, y: 20, duration: 0.6,
+        scrollTrigger: {
+          trigger: "#cta-section",
+          start: "top 80%",
+          toggleActions: "play none none reverse",
+        },
+      });
+      gsap.from("#cta-body", {
+        opacity: 0, y: 15, duration: 0.6,
+        scrollTrigger: {
+          trigger: "#cta-section",
+          start: "top 75%",
+          toggleActions: "play none none reverse",
+        },
+      });
+    }
+
     // --- Footer fade-in ---
     if (!prefersReduced) {
       gsap.from(".footer", {
@@ -478,37 +608,39 @@ import DiffusionViz from "../components/DiffusionViz.astro";
 
   /* ── Section gradient blending (Reuters 0%–90% pattern) ── */
 
-  /* Iceberg overview — sky fading to deep water */
+  /* Iceberg overview — light teal tint */
   #main-content {
     background: linear-gradient(
       180deg,
       var(--bg-primary) 0% 85%,
-      #0a1628
+      var(--bg-secondary)
     );
   }
 
-  /* Deep dive chapter — deep blue to slightly lighter */
+  /* Deep dive chapter */
   [aria-label="How LLMs work — deep dive"] {
     background: linear-gradient(
       180deg,
-      #0a1628 0%,
-      var(--bg-secondary) 10% 90%,
-      #0d1525
+      var(--bg-secondary) 0%,
+      var(--bg-primary) 10% 90%,
+      var(--bg-secondary)
     );
   }
 
-  /* Beyond text section — transition to purple-tinted dark */
+  /* Beyond text section */
   [aria-label="Beyond text — image generation"] {
     background: linear-gradient(
       180deg,
-      #0d1525 0%,
-      rgba(15, 12, 28, 0.95) 10% 90%,
+      var(--bg-secondary) 0%,
+      var(--bg-primary) 10% 90%,
       var(--bg-primary)
     );
   }
 
-  /* Misconceptions closing section — subtle dark gradient */
+  /* Misconceptions closing section */
   #misconceptions-section {
+    min-height: auto;
+    padding-bottom: var(--space-lg);
     background: linear-gradient(
       180deg,
       var(--bg-primary) 0%,
@@ -537,7 +669,7 @@ import DiffusionViz from "../components/DiffusionViz.astro";
   #next-token-section {
     background: radial-gradient(
       ellipse at center,
-      rgba(14, 165, 233, 0.03) 0%,
+      rgba(8, 145, 178, 0.04) 0%,
       transparent 70%
     );
   }
@@ -552,6 +684,100 @@ import DiffusionViz from "../components/DiffusionViz.astro";
     padding-bottom: 20vh;
   }
 
+  /* ── Pull quote (Bender etc.) ── */
+  .pull-quote {
+    margin: 1.5rem 0 0;
+    padding: 1.25rem 1.5rem;
+    border-left: 3px solid var(--accent-cyan);
+    background: rgba(8, 145, 178, 0.04);
+    border-radius: 0 8px 8px 0;
+  }
+
+  .pull-quote p {
+    font-size: 0.95rem;
+    font-style: italic;
+    line-height: 1.7;
+    color: var(--text-secondary);
+    margin: 0 0 0.5rem;
+  }
+
+  .pull-quote cite {
+    font-size: 0.8rem;
+    font-style: normal;
+    color: var(--text-muted);
+    display: block;
+  }
+
+  /* ── CTA section ── */
+  .cta-section {
+    text-align: center;
+    padding: var(--space-xl) var(--space-lg);
+    background: linear-gradient(
+      180deg,
+      var(--bg-primary) 0%,
+      rgba(8, 145, 178, 0.06) 50%,
+      var(--bg-primary) 100%
+    );
+  }
+
+  .cta-inner {
+    max-width: 580px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .cta-heading {
+    font-family: var(--font-display);
+    font-size: clamp(1.6rem, 4vw, 2.2rem);
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0;
+    letter-spacing: -0.02em;
+  }
+
+  .cta-subtitle {
+    font-family: var(--font-sans);
+    font-size: clamp(0.95rem, 2vw, 1.1rem);
+    color: var(--accent-cyan);
+    font-weight: 500;
+    margin: 0;
+  }
+
+  .cta-body {
+    font-size: 0.95rem;
+    color: var(--text-secondary);
+    line-height: 1.7;
+    margin: 0.5rem 0 0.5rem;
+  }
+
+  .cta-button {
+    display: inline-block;
+    padding: 0.85rem 2rem;
+    margin-top: 0.5rem;
+    background: var(--accent-cyan);
+    color: #fff;
+    font-family: var(--font-sans);
+    font-size: 0.95rem;
+    font-weight: 600;
+    border-radius: 8px;
+    text-decoration: none;
+    transition: background 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
+    box-shadow: 0 2px 12px rgba(8, 145, 178, 0.2);
+  }
+
+  .cta-button:hover {
+    background: #0e7490;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 20px rgba(8, 145, 178, 0.3);
+  }
+
+  .cta-button:active {
+    transform: translateY(0);
+  }
+
   /* ── Instruction panels before visualizations ── */
   .viz-instruction {
     text-align: center;
@@ -562,7 +788,7 @@ import DiffusionViz from "../components/DiffusionViz.astro";
     color: var(--text-muted);
     letter-spacing: 0.02em;
     opacity: 0.7;
-    border-top: 1px solid rgba(255, 255, 255, 0.04);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    border-top: 1px solid rgba(8, 145, 178, 0.1);
+    border-bottom: 1px solid rgba(8, 145, 178, 0.1);
   }
 </style>

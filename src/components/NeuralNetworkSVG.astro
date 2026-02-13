@@ -18,12 +18,14 @@
     <div class="nn-text-content">
       <h2 class="nn-heading" data-nn="heading">The LLM: a black box?</h2>
       <p class="nn-description" data-nn="desc">
-        Large Language Models are often called "black boxes" because their internal connections
-        are so massively complex that no human could fully unravel them. But we <em>can</em>
-        understand the architecture. Let's open the box.
+        GPT-4 has an estimated <strong>1.8 trillion parameters</strong> &mdash; numerical
+        values learned during training. That&rsquo;s why it&rsquo;s called a &ldquo;black box&rdquo;:
+        no human could unravel all those connections. But we <em>can</em>
+        understand the architecture. Let&rsquo;s open the box.
       </p>
     </div>
 
+    <div class="nn-layout" data-nn="layout">
     <div class="nn-viz-wrapper" data-nn="viz-wrapper">
       <!-- SVG circle mask overlay -->
       <div class="nn-blackbox-overlay" data-nn="blackbox" aria-hidden="true">
@@ -39,7 +41,7 @@
             </radialGradient>
           </defs>
           <!-- Dark overlay with circle cut out -->
-          <rect width="900" height="560" fill="rgba(10, 10, 20, 0.97)" mask="url(#nn-reveal-mask)"/>
+          <rect width="900" height="560" fill="rgba(225, 238, 243, 0.97)" mask="url(#nn-reveal-mask)"/>
         </svg>
         <span class="nn-blackbox-label" data-nn="blackbox-label">?</span>
       </div>
@@ -103,161 +105,147 @@
 
         <!-- ===== LAYER 1: INPUT TOKENS ===== -->
         <g data-nn-layer="input" class="nn-layer" opacity="0">
-          <text x="80" y="530" class="nn-layer-label" text-anchor="middle">Input</text>
-          <text x="80" y="548" class="nn-layer-sublabel" text-anchor="middle">Tokens</text>
+          <text x="400" y="538" class="nn-layer-label" text-anchor="middle">Input</text>
+          <text x="400" y="552" class="nn-layer-sublabel" text-anchor="middle">Tokens</text>
 
-          <!-- Token boxes -->
           <g class="nn-token-group">
-            <rect x="20" y="470" width="50" height="32" rx="4" class="nn-token-box" data-nn-node="input-0" />
-            <text x="45" y="491" class="nn-token-text" text-anchor="middle">The</text>
+            <rect x="275" y="492" width="50" height="30" rx="4" class="nn-token-box" data-nn-node="input-0" />
+            <text x="300" y="512" class="nn-token-text" text-anchor="middle">The</text>
           </g>
           <g class="nn-token-group">
-            <rect x="80" y="470" width="50" height="32" rx="4" class="nn-token-box" data-nn-node="input-1" />
-            <text x="105" y="491" class="nn-token-text" text-anchor="middle">cat</text>
+            <rect x="375" y="492" width="50" height="30" rx="4" class="nn-token-box" data-nn-node="input-1" />
+            <text x="400" y="512" class="nn-token-text" text-anchor="middle">cat</text>
           </g>
           <g class="nn-token-group">
-            <rect x="140" y="470" width="50" height="32" rx="4" class="nn-token-box" data-nn-node="input-2" />
-            <text x="165" y="491" class="nn-token-text" text-anchor="middle">sat</text>
+            <rect x="475" y="492" width="50" height="30" rx="4" class="nn-token-box" data-nn-node="input-2" />
+            <text x="500" y="512" class="nn-token-text" text-anchor="middle">sat</text>
           </g>
         </g>
 
         <!-- ===== LAYER 2: EMBEDDING ===== -->
         <g data-nn-layer="embedding" class="nn-layer" opacity="0">
-          <text x="80" y="418" class="nn-layer-label" text-anchor="middle">Embedding</text>
+          <text x="400" y="454" class="nn-layer-label" text-anchor="middle">Embedding</text>
 
-          <!-- Embedding nodes -->
-          <circle cx="45" cy="430" r="10" class="nn-node nn-node-embed" data-nn-node="embed-0" />
-          <circle cx="105" cy="430" r="10" class="nn-node nn-node-embed" data-nn-node="embed-1" />
-          <circle cx="165" cy="430" r="10" class="nn-node nn-node-embed" data-nn-node="embed-2" />
+          <circle cx="300" cy="466" r="10" class="nn-node nn-node-embed" data-nn-node="embed-0" />
+          <circle cx="400" cy="466" r="10" class="nn-node nn-node-embed" data-nn-node="embed-1" />
+          <circle cx="500" cy="466" r="10" class="nn-node nn-node-embed" data-nn-node="embed-2" />
 
-          <!-- Connections from input to embedding -->
-          <line x1="45" y1="470" x2="45" y2="442" class="nn-connection" data-nn-conn="input-embed" />
-          <line x1="105" y1="470" x2="105" y2="442" class="nn-connection" data-nn-conn="input-embed" />
-          <line x1="165" y1="470" x2="165" y2="442" class="nn-connection" data-nn-conn="input-embed" />
+          <line x1="300" y1="492" x2="300" y2="476" class="nn-connection" data-nn-conn="input-embed" />
+          <line x1="400" y1="492" x2="400" y2="476" class="nn-connection" data-nn-conn="input-embed" />
+          <line x1="500" y1="492" x2="500" y2="476" class="nn-connection" data-nn-conn="input-embed" />
         </g>
 
         <!-- ===== TRANSFORMER BLOCK 1 ===== -->
         <g data-nn-layer="transformer-1" class="nn-layer nn-transformer-block" opacity="0">
-          <!-- Block background -->
-          <rect x="15" y="270" width="310" height="140" rx="8" class="nn-block-bg" />
-          <text x="330" y="310" class="nn-block-label">Transformer</text>
-          <text x="330" y="328" class="nn-block-label">Block 1</text>
+          <rect x="180" y="276" width="440" height="168" rx="8" class="nn-block-bg" />
+          <text x="632" y="340" class="nn-block-label">Transformer</text>
+          <text x="632" y="358" class="nn-block-label">Block 1</text>
 
-          <!-- Self-Attention sub-block -->
-          <rect x="25" y="340" width="290" height="55" rx="6" class="nn-attn-block" />
-          <text x="170" y="374" class="nn-sublayer-label" text-anchor="middle">Self-Attention</text>
+          <!-- Self-Attention sub-block: label at top, nodes below -->
+          <rect x="195" y="358" width="410" height="76" rx="6" class="nn-attn-block" />
+          <text x="400" y="376" class="nn-sublayer-label" text-anchor="middle">Self-Attention</text>
 
-          <!-- Attention nodes -->
-          <circle cx="60" cy="367" r="8" class="nn-node nn-node-attn" data-nn-node="attn1-0" />
-          <circle cx="110" cy="367" r="8" class="nn-node nn-node-attn" data-nn-node="attn1-1" />
-          <circle cx="160" cy="367" r="8" class="nn-node nn-node-attn" data-nn-node="attn1-2" />
+          <circle cx="300" cy="414" r="8" class="nn-node nn-node-attn" data-nn-node="attn1-0" />
+          <circle cx="400" cy="414" r="8" class="nn-node nn-node-attn" data-nn-node="attn1-1" />
+          <circle cx="500" cy="414" r="8" class="nn-node nn-node-attn" data-nn-node="attn1-2" />
 
-          <!-- Cross-connections (attention looks at all positions) -->
-          <line x1="60" y1="367" x2="110" y2="367" class="nn-attention-link" />
-          <line x1="110" y1="367" x2="160" y2="367" class="nn-attention-link" />
-          <line x1="60" y1="367" x2="160" y2="367" class="nn-attention-link" />
+          <line x1="300" y1="414" x2="400" y2="414" class="nn-attention-link" />
+          <line x1="400" y1="414" x2="500" y2="414" class="nn-attention-link" />
+          <line x1="300" y1="414" x2="500" y2="414" class="nn-attention-link" />
 
-          <!-- Feed-Forward sub-block -->
-          <rect x="25" y="278" width="290" height="52" rx="6" class="nn-ffn-block" />
-          <text x="170" y="310" class="nn-sublayer-label" text-anchor="middle">Feed-Forward (MLP)</text>
+          <!-- Feed-Forward sub-block: label at top, nodes below -->
+          <rect x="195" y="282" width="410" height="66" rx="6" class="nn-ffn-block" />
+          <text x="400" y="302" class="nn-sublayer-label" text-anchor="middle">Feed-Forward (MLP)</text>
 
-          <!-- FFN nodes -->
-          <circle cx="55" cy="304" r="8" class="nn-node nn-node-ffn" data-nn-node="ffn1-0" />
-          <circle cx="95" cy="304" r="8" class="nn-node nn-node-ffn" data-nn-node="ffn1-1" />
-          <circle cx="135" cy="304" r="8" class="nn-node nn-node-ffn" data-nn-node="ffn1-2" />
-          <circle cx="175" cy="304" r="8" class="nn-node nn-node-ffn" data-nn-node="ffn1-3" />
+          <circle cx="270" cy="332" r="8" class="nn-node nn-node-ffn" data-nn-node="ffn1-0" />
+          <circle cx="360" cy="332" r="8" class="nn-node nn-node-ffn" data-nn-node="ffn1-1" />
+          <circle cx="450" cy="332" r="8" class="nn-node nn-node-ffn" data-nn-node="ffn1-2" />
+          <circle cx="540" cy="332" r="8" class="nn-node nn-node-ffn" data-nn-node="ffn1-3" />
 
           <!-- Internal connections: attention -> FFN -->
-          <line x1="60" y1="359" x2="55" y2="312" class="nn-connection nn-internal" />
-          <line x1="60" y1="359" x2="95" y2="312" class="nn-connection nn-internal" />
-          <line x1="110" y1="359" x2="95" y2="312" class="nn-connection nn-internal" />
-          <line x1="110" y1="359" x2="135" y2="312" class="nn-connection nn-internal" />
-          <line x1="160" y1="359" x2="135" y2="312" class="nn-connection nn-internal" />
-          <line x1="160" y1="359" x2="175" y2="312" class="nn-connection nn-internal" />
+          <line x1="300" y1="406" x2="270" y2="340" class="nn-connection nn-internal" />
+          <line x1="300" y1="406" x2="360" y2="340" class="nn-connection nn-internal" />
+          <line x1="400" y1="406" x2="360" y2="340" class="nn-connection nn-internal" />
+          <line x1="400" y1="406" x2="450" y2="340" class="nn-connection nn-internal" />
+          <line x1="500" y1="406" x2="450" y2="340" class="nn-connection nn-internal" />
+          <line x1="500" y1="406" x2="540" y2="340" class="nn-connection nn-internal" />
 
           <!-- Connections from embedding to attention -->
-          <line x1="45" y1="420" x2="60" y2="375" class="nn-connection" data-nn-conn="embed-attn1" />
-          <line x1="105" y1="420" x2="110" y2="375" class="nn-connection" data-nn-conn="embed-attn1" />
-          <line x1="165" y1="420" x2="160" y2="375" class="nn-connection" data-nn-conn="embed-attn1" />
+          <line x1="300" y1="456" x2="300" y2="422" class="nn-connection" data-nn-conn="embed-attn1" />
+          <line x1="400" y1="456" x2="400" y2="422" class="nn-connection" data-nn-conn="embed-attn1" />
+          <line x1="500" y1="456" x2="500" y2="422" class="nn-connection" data-nn-conn="embed-attn1" />
         </g>
 
         <!-- ===== TRANSFORMER BLOCK 2 ===== -->
         <g data-nn-layer="transformer-2" class="nn-layer nn-transformer-block" opacity="0">
-          <rect x="15" y="120" width="310" height="140" rx="8" class="nn-block-bg" />
-          <text x="330" y="160" class="nn-block-label">Transformer</text>
-          <text x="330" y="178" class="nn-block-label">Block 2</text>
+          <rect x="180" y="96" width="440" height="168" rx="8" class="nn-block-bg" />
+          <text x="632" y="160" class="nn-block-label">Transformer</text>
+          <text x="632" y="178" class="nn-block-label">Block 2</text>
 
-          <!-- Self-Attention sub-block -->
-          <rect x="25" y="190" width="290" height="55" rx="6" class="nn-attn-block" />
-          <text x="170" y="224" class="nn-sublayer-label" text-anchor="middle">Self-Attention</text>
+          <rect x="195" y="178" width="410" height="76" rx="6" class="nn-attn-block" />
+          <text x="400" y="196" class="nn-sublayer-label" text-anchor="middle">Self-Attention</text>
 
-          <circle cx="60" cy="217" r="8" class="nn-node nn-node-attn" data-nn-node="attn2-0" />
-          <circle cx="110" cy="217" r="8" class="nn-node nn-node-attn" data-nn-node="attn2-1" />
-          <circle cx="160" cy="217" r="8" class="nn-node nn-node-attn" data-nn-node="attn2-2" />
+          <circle cx="300" cy="234" r="8" class="nn-node nn-node-attn" data-nn-node="attn2-0" />
+          <circle cx="400" cy="234" r="8" class="nn-node nn-node-attn" data-nn-node="attn2-1" />
+          <circle cx="500" cy="234" r="8" class="nn-node nn-node-attn" data-nn-node="attn2-2" />
 
-          <line x1="60" y1="217" x2="110" y2="217" class="nn-attention-link" />
-          <line x1="110" y1="217" x2="160" y2="217" class="nn-attention-link" />
-          <line x1="60" y1="217" x2="160" y2="217" class="nn-attention-link" />
+          <line x1="300" y1="234" x2="400" y2="234" class="nn-attention-link" />
+          <line x1="400" y1="234" x2="500" y2="234" class="nn-attention-link" />
+          <line x1="300" y1="234" x2="500" y2="234" class="nn-attention-link" />
 
-          <!-- Feed-Forward sub-block -->
-          <rect x="25" y="128" width="290" height="52" rx="6" class="nn-ffn-block" />
-          <text x="170" y="160" class="nn-sublayer-label" text-anchor="middle">Feed-Forward (MLP)</text>
+          <rect x="195" y="102" width="410" height="66" rx="6" class="nn-ffn-block" />
+          <text x="400" y="122" class="nn-sublayer-label" text-anchor="middle">Feed-Forward (MLP)</text>
 
-          <circle cx="55" cy="154" r="8" class="nn-node nn-node-ffn" data-nn-node="ffn2-0" />
-          <circle cx="95" cy="154" r="8" class="nn-node nn-node-ffn" data-nn-node="ffn2-1" />
-          <circle cx="135" cy="154" r="8" class="nn-node nn-node-ffn" data-nn-node="ffn2-2" />
-          <circle cx="175" cy="154" r="8" class="nn-node nn-node-ffn" data-nn-node="ffn2-3" />
+          <circle cx="270" cy="152" r="8" class="nn-node nn-node-ffn" data-nn-node="ffn2-0" />
+          <circle cx="360" cy="152" r="8" class="nn-node nn-node-ffn" data-nn-node="ffn2-1" />
+          <circle cx="450" cy="152" r="8" class="nn-node nn-node-ffn" data-nn-node="ffn2-2" />
+          <circle cx="540" cy="152" r="8" class="nn-node nn-node-ffn" data-nn-node="ffn2-3" />
 
-          <!-- Internal connections: attention -> FFN -->
-          <line x1="60" y1="209" x2="55" y2="162" class="nn-connection nn-internal" />
-          <line x1="60" y1="209" x2="95" y2="162" class="nn-connection nn-internal" />
-          <line x1="110" y1="209" x2="95" y2="162" class="nn-connection nn-internal" />
-          <line x1="110" y1="209" x2="135" y2="162" class="nn-connection nn-internal" />
-          <line x1="160" y1="209" x2="135" y2="162" class="nn-connection nn-internal" />
-          <line x1="160" y1="209" x2="175" y2="162" class="nn-connection nn-internal" />
+          <line x1="300" y1="226" x2="270" y2="160" class="nn-connection nn-internal" />
+          <line x1="300" y1="226" x2="360" y2="160" class="nn-connection nn-internal" />
+          <line x1="400" y1="226" x2="360" y2="160" class="nn-connection nn-internal" />
+          <line x1="400" y1="226" x2="450" y2="160" class="nn-connection nn-internal" />
+          <line x1="500" y1="226" x2="450" y2="160" class="nn-connection nn-internal" />
+          <line x1="500" y1="226" x2="540" y2="160" class="nn-connection nn-internal" />
 
           <!-- Connections from block 1 FFN to block 2 attention -->
-          <line x1="55" y1="270" x2="60" y2="225" class="nn-connection" data-nn-conn="ffn1-attn2" />
-          <line x1="95" y1="270" x2="110" y2="225" class="nn-connection" data-nn-conn="ffn1-attn2" />
-          <line x1="155" y1="270" x2="160" y2="225" class="nn-connection" data-nn-conn="ffn1-attn2" />
+          <line x1="270" y1="276" x2="300" y2="242" class="nn-connection" data-nn-conn="ffn1-attn2" />
+          <line x1="400" y1="276" x2="400" y2="242" class="nn-connection" data-nn-conn="ffn1-attn2" />
+          <line x1="540" y1="276" x2="500" y2="242" class="nn-connection" data-nn-conn="ffn1-attn2" />
         </g>
 
         <!-- ===== Nx label ===== -->
         <g data-nn-layer="transformer-2" class="nn-layer" opacity="0">
-          <text x="340" y="250" class="nn-nx-label">&times;N</text>
-          <text x="340" y="268" class="nn-nx-sublabel">layers</text>
+          <text x="640" y="245" class="nn-nx-label">&times;N</text>
+          <text x="640" y="263" class="nn-nx-sublabel">layers</text>
         </g>
 
         <!-- ===== OUTPUT LAYER ===== -->
         <g data-nn-layer="output" class="nn-layer" opacity="0">
-          <!-- Connections from block 2 to output -->
-          <line x1="55" y1="120" x2="80" y2="85" class="nn-connection" data-nn-conn="ffn2-output" />
-          <line x1="95" y1="120" x2="130" y2="85" class="nn-connection" data-nn-conn="ffn2-output" />
-          <line x1="135" y1="120" x2="180" y2="85" class="nn-connection" data-nn-conn="ffn2-output" />
-          <line x1="175" y1="120" x2="230" y2="85" class="nn-connection" data-nn-conn="ffn2-output" />
+          <line x1="270" y1="96" x2="300" y2="86" class="nn-connection" data-nn-conn="ffn2-output" />
+          <line x1="360" y1="96" x2="370" y2="86" class="nn-connection" data-nn-conn="ffn2-output" />
+          <line x1="450" y1="96" x2="440" y2="86" class="nn-connection" data-nn-conn="ffn2-output" />
+          <line x1="540" y1="96" x2="510" y2="86" class="nn-connection" data-nn-conn="ffn2-output" />
 
-          <!-- Output / Softmax -->
-          <rect x="50" y="50" width="210" height="36" rx="6" class="nn-output-block" />
-          <text x="155" y="74" class="nn-sublayer-label nn-output-label" text-anchor="middle">Softmax &rarr; Next Token</text>
+          <rect x="250" y="50" width="300" height="36" rx="6" class="nn-output-block" />
+          <text x="400" y="74" class="nn-sublayer-label nn-output-label" text-anchor="middle">Softmax &rarr; Next Token</text>
 
-          <!-- Output probability bars -->
           <g class="nn-prob-group" data-nn="probs">
-            <rect x="400" y="30" width="8" height="46" rx="2" class="nn-prob-bar" data-nn-prob="0" opacity="0" />
-            <text x="404" y="88" class="nn-prob-text" text-anchor="middle" opacity="0">on</text>
+            <rect x="700" y="30" width="8" height="46" rx="2" class="nn-prob-bar" data-nn-prob="0" opacity="0" />
+            <text x="704" y="88" class="nn-prob-text" text-anchor="middle" opacity="0">on</text>
 
-            <rect x="430" y="55" width="8" height="21" rx="2" class="nn-prob-bar" data-nn-prob="1" opacity="0" />
-            <text x="434" y="88" class="nn-prob-text" text-anchor="middle" opacity="0">by</text>
+            <rect x="730" y="55" width="8" height="21" rx="2" class="nn-prob-bar" data-nn-prob="1" opacity="0" />
+            <text x="734" y="88" class="nn-prob-text" text-anchor="middle" opacity="0">by</text>
 
-            <rect x="460" y="62" width="8" height="14" rx="2" class="nn-prob-bar" data-nn-prob="2" opacity="0" />
-            <text x="464" y="88" class="nn-prob-text" text-anchor="middle" opacity="0">in</text>
+            <rect x="760" y="62" width="8" height="14" rx="2" class="nn-prob-bar" data-nn-prob="2" opacity="0" />
+            <text x="764" y="88" class="nn-prob-text" text-anchor="middle" opacity="0">in</text>
 
-            <rect x="490" y="66" width="8" height="10" rx="2" class="nn-prob-bar" data-nn-prob="3" opacity="0" />
-            <text x="494" y="88" class="nn-prob-text" text-anchor="middle" opacity="0">at</text>
+            <rect x="790" y="66" width="8" height="10" rx="2" class="nn-prob-bar" data-nn-prob="3" opacity="0" />
+            <text x="794" y="88" class="nn-prob-text" text-anchor="middle" opacity="0">at</text>
 
-            <text x="445" y="20" class="nn-prob-heading" text-anchor="middle" opacity="0">Predicted next token</text>
+            <text x="745" y="22" class="nn-prob-heading" text-anchor="middle" opacity="0">Predicted next token</text>
 
-            <!-- Arrow from softmax to probs -->
-            <line x1="260" y1="68" x2="390" y2="68" class="nn-connection nn-output-conn" marker-end="url(#nn-arrow)" opacity="0" />
+            <line x1="550" y1="68" x2="690" y2="68" class="nn-connection nn-output-conn" marker-end="url(#nn-arrow)" opacity="0" />
           </g>
         </g>
 
@@ -269,6 +257,59 @@
         </g>
       </svg>
     </div>
+
+    <!-- KEY / LEGEND -->
+    <div class="nn-key" data-nn="key">
+      <h3 class="nn-key-title">Architecture Key</h3>
+
+      <div class="nn-key-item" data-nn-key="input">
+        <div class="nn-key-dot nn-key-dot--input"></div>
+        <div>
+          <span class="nn-key-label">Input Tokens</span>
+          <span class="nn-key-desc">Text broken into pieces the model can process</span>
+        </div>
+      </div>
+
+      <div class="nn-key-item" data-nn-key="embedding">
+        <div class="nn-key-dot nn-key-dot--embed"></div>
+        <div>
+          <span class="nn-key-label">Embedding</span>
+          <span class="nn-key-desc">Each token becomes a vector of ~12,000 numbers</span>
+        </div>
+      </div>
+
+      <div class="nn-key-item" data-nn-key="attention">
+        <div class="nn-key-dot nn-key-dot--attn"></div>
+        <div>
+          <span class="nn-key-label">Self-Attention</span>
+          <span class="nn-key-desc">Every word looks at every other word for context</span>
+        </div>
+      </div>
+
+      <div class="nn-key-item" data-nn-key="ffn">
+        <div class="nn-key-dot nn-key-dot--ffn"></div>
+        <div>
+          <span class="nn-key-label">Feed-Forward (MLP)</span>
+          <span class="nn-key-desc">Dense neural network layers that transform representations</span>
+        </div>
+      </div>
+
+      <div class="nn-key-item" data-nn-key="output">
+        <div class="nn-key-dot nn-key-dot--output"></div>
+        <div>
+          <span class="nn-key-label">Softmax Output</span>
+          <span class="nn-key-desc">Probability distribution over every possible next token</span>
+        </div>
+      </div>
+
+      <div class="nn-key-callout" data-nn-key="params">
+        <strong>GPT-4: ~1.8 trillion parameters</strong>
+        <span>96 transformer layers, each with billions of learned numerical connections.
+        This is why it&rsquo;s a &ldquo;black box&rdquo; &mdash; the sheer scale makes
+        individual connections impossible to trace.</span>
+      </div>
+    </div>
+    </div><!-- /nn-layout -->
   </div>
 </section>
 
@@ -284,7 +325,7 @@
   }
 
   .nn-container {
-    max-width: 960px;
+    max-width: 1100px;
     width: 100%;
     display: flex;
     flex-direction: column;
@@ -300,7 +341,7 @@
   .nn-heading {
     font-size: clamp(1.6rem, 4vw, 2.4rem);
     font-weight: 700;
-    color: #e2e8f0;
+    color: #1a2e3a;
     margin: 0 0 1rem;
     letter-spacing: -0.02em;
     line-height: 1.2;
@@ -308,14 +349,24 @@
 
   .nn-description {
     font-size: clamp(0.95rem, 2vw, 1.1rem);
-    color: #94a3b8;
+    color: #3d5a6a;
     line-height: 1.7;
     margin: 0;
   }
 
   .nn-description em {
-    color: #cbd5e1;
+    color: #1a2e3a;
     font-style: italic;
+  }
+
+  /* === Side-by-side layout === */
+  .nn-layout {
+    display: grid;
+    grid-template-columns: 1fr 280px;
+    gap: 1.5rem;
+    width: 100%;
+    max-width: 1100px;
+    align-items: start;
   }
 
   /* === Visualization wrapper === */
@@ -325,8 +376,8 @@
     max-width: 900px;
     border-radius: 12px;
     overflow: hidden;
-    background: rgba(15, 23, 42, 0.4);
-    border: 1px solid rgba(14, 165, 233, 0.1);
+    background: rgba(255, 255, 255, 0.7);
+    border: 1px solid rgba(8, 145, 178, 0.15);
   }
 
   /* === Black box overlay === */
@@ -351,7 +402,7 @@
   .nn-blackbox-label {
     font-size: 4rem;
     font-weight: 800;
-    color: rgba(148, 163, 184, 0.25);
+    color: rgba(26, 46, 58, 0.2);
     user-select: none;
     letter-spacing: 0.05em;
     z-index: 1;
@@ -368,7 +419,7 @@
 
   /* === Layer labels === */
   .nn-layer-label {
-    fill: #94a3b8;
+    fill: #3d5a6a;
     font-size: 12px;
     font-weight: 600;
     font-family: 'Inter', system-ui, sans-serif;
@@ -377,27 +428,27 @@
   }
 
   .nn-layer-sublabel {
-    fill: #64748b;
+    fill: #5a7a8a;
     font-size: 10px;
     font-family: 'Inter', system-ui, sans-serif;
   }
 
   .nn-block-label {
-    fill: #64748b;
+    fill: #3d5a6a;
     font-size: 13px;
     font-weight: 500;
     font-family: 'Inter', system-ui, sans-serif;
   }
 
   .nn-sublayer-label {
-    fill: #94a3b8;
+    fill: #3d5a6a;
     font-size: 11px;
     font-weight: 500;
     font-family: 'Inter', system-ui, sans-serif;
   }
 
   .nn-output-label {
-    fill: #e2e8f0;
+    fill: #1a2e3a;
   }
 
   .nn-nx-label {
@@ -408,7 +459,7 @@
   }
 
   .nn-nx-sublabel {
-    fill: #64748b;
+    fill: #5a7a8a;
     font-size: 11px;
     font-family: 'Inter', system-ui, sans-serif;
   }
@@ -506,13 +557,13 @@
   }
 
   .nn-prob-text {
-    fill: #64748b;
+    fill: #3d5a6a;
     font-size: 10px;
     font-family: 'Inter', system-ui, sans-serif;
   }
 
   .nn-prob-heading {
-    fill: #94a3b8;
+    fill: #3d5a6a;
     font-size: 11px;
     font-weight: 600;
     font-family: 'Inter', system-ui, sans-serif;
@@ -523,6 +574,93 @@
   /* === Pulse animation (CSS fallback for non-GSAP) === */
   .nn-pulse {
     will-change: transform, opacity;
+  }
+
+  /* === Key panel === */
+  .nn-key {
+    position: sticky;
+    top: 6rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+    padding: 1.25rem;
+    background: rgba(255, 255, 255, 0.7);
+    border: 1px solid rgba(8, 145, 178, 0.12);
+    border-radius: 12px;
+    opacity: 0;
+  }
+
+  .nn-key-title {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #5a7a8a;
+    margin: 0 0 0.25rem;
+  }
+
+  .nn-key-item {
+    display: flex;
+    gap: 0.6rem;
+    align-items: flex-start;
+    opacity: 0.4;
+    transition: opacity 0.4s ease;
+  }
+
+  .nn-key-item.active {
+    opacity: 1;
+  }
+
+  .nn-key-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .nn-key-dot--input { background: #0ea5e9; }
+  .nn-key-dot--embed { background: #0ea5e9; }
+  .nn-key-dot--attn { background: #38bdf8; }
+  .nn-key-dot--ffn { background: #8b5cf6; }
+  .nn-key-dot--output { background: #10b981; }
+
+  .nn-key-label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #1a2e3a;
+    line-height: 1.3;
+  }
+
+  .nn-key-desc {
+    display: block;
+    font-size: 0.72rem;
+    color: #5a7a8a;
+    line-height: 1.4;
+  }
+
+  .nn-key-callout {
+    margin-top: 0.5rem;
+    padding: 0.75rem;
+    background: rgba(8, 145, 178, 0.06);
+    border: 1px solid rgba(8, 145, 178, 0.15);
+    border-radius: 8px;
+    opacity: 0;
+    transition: opacity 0.4s ease;
+  }
+
+  .nn-key-callout strong {
+    display: block;
+    font-size: 0.8rem;
+    color: #0891b2;
+    margin-bottom: 0.3rem;
+  }
+
+  .nn-key-callout span {
+    font-size: 0.72rem;
+    color: #3d5a6a;
+    line-height: 1.5;
   }
 
   /* === Reduced motion === */
@@ -536,6 +674,17 @@
   }
 
   /* === Responsive === */
+  @media (max-width: 768px) {
+    .nn-layout {
+      grid-template-columns: 1fr;
+    }
+
+    .nn-key {
+      position: static;
+      order: 2;
+    }
+  }
+
   @media (max-width: 640px) {
     .nn-section {
       padding: 2rem 1rem;
@@ -551,6 +700,14 @@
 
     .nn-blackbox-label {
       font-size: 2.5rem;
+    }
+
+    .nn-key {
+      padding: 1rem;
+    }
+
+    .nn-key-callout {
+      padding: 0.6rem;
     }
   }
 </style>
@@ -589,7 +746,26 @@
     const outputConn = section.querySelector('.nn-output-conn');
     const pulses = section.querySelectorAll('.nn-pulse');
 
+    const keyPanel = section.querySelector('[data-nn="key"]') as HTMLElement;
+    const keyItems = {
+      input: section.querySelector('[data-nn-key="input"]') as HTMLElement,
+      embedding: section.querySelector('[data-nn-key="embedding"]') as HTMLElement,
+      attention: section.querySelector('[data-nn-key="attention"]') as HTMLElement,
+      ffn: section.querySelector('[data-nn-key="ffn"]') as HTMLElement,
+      output: section.querySelector('[data-nn-key="output"]') as HTMLElement,
+    };
+    const keyCallout = section.querySelector('[data-nn-key="params"]') as HTMLElement;
+
     const layerOrder = ['input', 'embedding', 'transformer-1', 'transformer-2', 'output'];
+
+    // Map layer names to which key items should highlight
+    const layerToKeys: Record<string, string[]> = {
+      'input': ['input'],
+      'embedding': ['embedding'],
+      'transformer-1': ['attention', 'ffn'],
+      'transformer-2': ['attention', 'ffn'],
+      'output': ['output'],
+    };
 
     // State tracker to avoid redundant gsap.to() calls
     const reached: Record<string, boolean> = {};
@@ -614,8 +790,8 @@
     blackbox.style.pointerEvents = 'auto';
 
     // Build repeating pulse timelines (paused initially)
-    const pulsePathY = [486, 430, 367, 304, 217, 154, 68];
-    const pulsePathX = [45, 105, 165];
+    const pulsePathY = [507, 466, 414, 332, 234, 152, 68];
+    const pulsePathX = [300, 400, 500];
     const pulseTimelines: any[] = [];
 
     pulses.forEach((pulse, i) => {
@@ -639,7 +815,7 @@
 
     ScrollTrigger.create({
       trigger: section,
-      start: 'top top',
+      start: 'center center',
       end: '+=250%',
       pin: true,
       anticipatePin: 1,
@@ -679,6 +855,10 @@
               ease: 'power2.inOut',
               onComplete: () => { blackbox.style.pointerEvents = 'none'; },
             });
+            // Reveal the key panel
+            if (keyPanel) {
+              gsap.to(keyPanel, { opacity: 1, duration: 0.6, delay: 0.3, ease: 'power2.out' });
+            }
           });
         } else {
           unonce('blackbox', () => {
@@ -694,6 +874,13 @@
               delay: 0.3,
               onComplete: () => { blackbox.style.pointerEvents = 'auto'; },
             });
+            // Hide key panel
+            if (keyPanel) {
+              gsap.to(keyPanel, { opacity: 0, duration: 0.3 });
+            }
+            // Reset all key item highlights
+            Object.values(keyItems).forEach(item => item?.classList.remove('active'));
+            if (keyCallout) gsap.set(keyCallout, { opacity: 0 });
           });
         }
 
@@ -717,10 +904,16 @@
                 stagger: 0.05,
                 ease: 'power2.out',
               });
+              // Highlight corresponding key items
+              const keysToHighlight = layerToKeys[layerName] || [];
+              keysToHighlight.forEach(k => keyItems[k as keyof typeof keyItems]?.classList.add('active'));
             });
           } else {
             unonce(key, () => {
               gsap.to(layerEls, { opacity: 0, duration: 0.3 });
+              // Remove highlight from corresponding key items
+              const keysToRemove = layerToKeys[layerName] || [];
+              keysToRemove.forEach(k => keyItems[k as keyof typeof keyItems]?.classList.remove('active'));
             });
           }
         });
@@ -771,6 +964,10 @@
           once('pulses', () => {
             pulseTimelines.forEach((ptl) => ptl.play());
           });
+          // Show params callout
+          once('params-callout', () => {
+            if (keyCallout) gsap.to(keyCallout, { opacity: 1, duration: 0.5, ease: 'power2.out' });
+          });
         } else {
           unonce('pulses', () => {
             pulseTimelines.forEach((ptl) => {
@@ -778,6 +975,9 @@
               ptl.progress(0);
             });
             gsap.set(pulses, { opacity: 0 });
+          });
+          unonce('params-callout', () => {
+            if (keyCallout) gsap.to(keyCallout, { opacity: 0, duration: 0.3 });
           });
         }
       },

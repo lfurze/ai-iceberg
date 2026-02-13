@@ -41,7 +41,7 @@ const stepLabels = [
       <!-- Text prompt display -->
       <div class="diff-prompt" data-diff="prompt">
         <span class="diff-prompt-icon" aria-hidden="true">&gt;</span>
-        <span class="diff-prompt-text">"A snowman face on a blue background"</span>
+        <span class="diff-prompt-text">"A red star on a blue background"</span>
       </div>
 
       <!-- Step indicator -->
@@ -69,7 +69,7 @@ const stepLabels = [
           id="diffusion-canvas"
           class="diff-canvas"
           role="img"
-          aria-label="Diffusion denoising visualization showing noise transforming into a snowman face on blue background"
+          aria-label="Diffusion denoising visualization showing noise transforming into a red star on blue background"
         ></canvas>
       </div>
 
@@ -93,11 +93,11 @@ const stepLabels = [
           statistical patterns from millions of images during training.
         </p>
         <p class="diff-step-explanation" data-diff-explain="2">
-          Broad shapes begin to emerge. The text prompt &ldquo;snowman face on blue background&rdquo;
+          Broad shapes begin to emerge. The text prompt "red star on blue background"
           guides the model via cross-attention with a CLIP text encoder.
         </p>
         <p class="diff-step-explanation" data-diff-explain="3">
-          Colors start separating &mdash; whites clustering where the face should be,
+          Colors start separating — reds clustering where the star should be,
           blues filling the background region.
         </p>
         <p class="diff-step-explanation" data-diff-explain="4">
@@ -109,7 +109,7 @@ const stepLabels = [
           run 20-50 of these denoising steps.
         </p>
         <p class="diff-step-explanation" data-diff-explain="6">
-          The final denoised image &mdash; a snowman face on a blue background, generated
+          The final denoised image — a red star on a blue background, generated
           entirely from noise, guided only by text.
         </p>
       </div>
@@ -377,52 +377,41 @@ const stepLabels = [
     const STEPS = 7;
 
     // --- Target image colors ---
-    const BG_R = 135, BG_G = 195, BG_B = 230;       // light sky blue
-    const HEAD_R = 250, HEAD_G = 250, HEAD_B = 252;  // white/snow
-    const EYE_R = 35, EYE_G = 35, EYE_B = 40;       // dark charcoal
-    const NOSE_R = 230, NOSE_G = 120, NOSE_B = 30;   // carrot orange
-    const MOUTH_R = 45, MOUTH_G = 45, MOUTH_B = 50;  // dark
+    const STAR_R = 220, STAR_G = 38, STAR_B = 38;     // #dc2626
+    const BG_R = 30, BG_G = 58, BG_B = 95;            // #1e3a5f
 
-    // --- Snowman face geometry at 64x64 ---
+    // --- 5-pointed star geometry ---
+    // Build star polygon vertices: alternate outer/inner radius at 36-degree intervals
     const cx = RES / 2;
     const cy = RES / 2;
-    const headR = RES * 0.38; // head circle radius
+    const outerR = RES * 0.42;  // outer radius
+    const innerR = outerR * 0.38; // inner radius (golden ratio-ish for a nice star)
+    const starVertices: [number, number][] = [];
 
-    function dist(x1: number, y1: number, x2: number, y2: number): number {
-      return Math.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2);
+    for (let i = 0; i < 10; i++) {
+      const angle = (i * Math.PI / 5) - Math.PI / 2; // start pointing up
+      const r = i % 2 === 0 ? outerR : innerR;
+      starVertices.push([cx + r * Math.cos(angle), cy + r * Math.sin(angle)]);
     }
 
-    // Eyes: two circles
-    const eyeR = 2.5;
-    const eyeY = cy - 5;
-    const leftEyeX = cx - 7;
-    const rightEyeX = cx + 7;
-
-    // Nose: small triangle pointing down-right from center
-    function isInsideNose(px: number, py: number): boolean {
-      // Triangle: tip pointing down, centered horizontally
-      const noseTop = cy - 1;
-      const noseBot = cy + 5;
-      const noseCx = cx;
-      const noseHalfW = 3;
-      if (py < noseTop || py > noseBot) return false;
-      const t = (py - noseTop) / (noseBot - noseTop);
-      const halfW = noseHalfW * (1 - t * 0.7); // narrows toward tip
-      return px >= noseCx - halfW && px <= noseCx + halfW;
-    }
-
-    // Mouth: arc of dots below the nose
-    function isInsideMouth(px: number, py: number): boolean {
-      const mouthCy = cy + 10;
-      const mouthR = 8;
-      const mouthThick = 1.5;
-      const d = dist(px, py, cx, mouthCy);
-      // Only bottom half of the arc (smile)
-      if (py < mouthCy) return false;
-      return d >= mouthR - mouthThick && d <= mouthR + mouthThick;
+    // Point-in-polygon test (ray casting)
+    function isInsideStar(px: number, py: number): boolean {
+      let inside = false;
+      const n = starVertices.length;
+      for (let i = 0, j = n - 1; i < n; j = i++) {
+        const [xi, yi] = starVertices[i];
+        const [xj, yj] = starVertices[j];
+        if (((yi > py) !== (yj > py)) &&
+            (px < (xj - xi) * (py - yi) / (yj - yi) + xi)) {
+          inside = !inside;
+        }
+      }
+      return inside;
     }
 
     // --- Pre-compute target image and distance map ---
+    // targetImage: for each pixel, [r, g, b] of the final image
+    // distMap: normalized distance from center (0 at center, 1 at corners)
     const targetImage = new Uint8Array(RES * RES * 3);
     const distMap = new Float32Array(RES * RES);
     const maxDist = Math.sqrt(cx * cx + cy * cy);
@@ -430,38 +419,21 @@ const stepLabels = [
     for (let y = 0; y < RES; y++) {
       for (let x = 0; x < RES; x++) {
         const idx = y * RES + x;
-        const px = x + 0.5;
-        const py = y + 0.5;
+        // Test center of pixel
+        const isStar = isInsideStar(x + 0.5, y + 0.5);
         const i3 = idx * 3;
-
-        let r = BG_R, g = BG_G, b = BG_B;
-
-        // Head circle
-        if (dist(px, py, cx, cy) <= headR) {
-          r = HEAD_R; g = HEAD_G; b = HEAD_B;
-
-          // Eyes
-          if (dist(px, py, leftEyeX, eyeY) <= eyeR ||
-              dist(px, py, rightEyeX, eyeY) <= eyeR) {
-            r = EYE_R; g = EYE_G; b = EYE_B;
-          }
-          // Nose
-          else if (isInsideNose(px, py)) {
-            r = NOSE_R; g = NOSE_G; b = NOSE_B;
-          }
-          // Mouth
-          else if (isInsideMouth(px, py)) {
-            r = MOUTH_R; g = MOUTH_G; b = MOUTH_B;
-          }
+        if (isStar) {
+          targetImage[i3] = STAR_R;
+          targetImage[i3 + 1] = STAR_G;
+          targetImage[i3 + 2] = STAR_B;
+        } else {
+          targetImage[i3] = BG_R;
+          targetImage[i3 + 1] = BG_G;
+          targetImage[i3 + 2] = BG_B;
         }
-
-        targetImage[i3] = r;
-        targetImage[i3 + 1] = g;
-        targetImage[i3 + 2] = b;
-
         // Distance from center, normalized 0..1
-        const dx = px - cx;
-        const dy = py - cy;
+        const dx = (x + 0.5) - cx;
+        const dy = (y + 0.5) - cy;
         distMap[idx] = Math.sqrt(dx * dx + dy * dy) / maxDist;
       }
     }
@@ -674,7 +646,7 @@ const stepLabels = [
             return;
           }
           setStep(step);
-        }, 2000);
+        }, 1200);
       },
       onLeaveBack: () => {
         // Reset if user scrolls back above

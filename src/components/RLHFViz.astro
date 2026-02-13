@@ -1,0 +1,494 @@
+---
+/**
+ * RLHFViz.astro — Interactive RLHF demonstration
+ *
+ * Three rounds of paired response comparison. The user picks the better
+ * response (thumbs up), watching a quality bar fill as the "model" learns
+ * from human feedback. Teaches helpfulness, safety, and accuracy.
+ */
+---
+
+<section class="rlhf-viz" id="rlhf-viz-section" aria-label="RLHF interactive demonstration">
+  <div class="rlhf-container">
+    <div class="rlhf-prompt" id="rlhf-prompt">
+      <span class="rlhf-prompt-icon" aria-hidden="true">&gt;</span>
+      <span class="rlhf-prompt-text" id="rlhf-prompt-text"></span>
+    </div>
+
+    <p class="rlhf-instruction" id="rlhf-instruction">Which response is better?</p>
+
+    <div class="rlhf-responses" id="rlhf-responses">
+      <div class="rlhf-card" id="rlhf-card-a" data-side="a">
+        <div class="rlhf-card-header">
+          <span class="rlhf-card-label">Response A</span>
+        </div>
+        <p class="rlhf-card-text" id="rlhf-text-a"></p>
+        <button class="rlhf-vote" id="rlhf-vote-a" aria-label="Choose Response A as better">
+          <span class="rlhf-thumb" aria-hidden="true">👍</span>
+          <span class="rlhf-vote-hint">Tap to choose</span>
+        </button>
+      </div>
+
+      <div class="rlhf-card" id="rlhf-card-b" data-side="b">
+        <div class="rlhf-card-header">
+          <span class="rlhf-card-label">Response B</span>
+        </div>
+        <p class="rlhf-card-text" id="rlhf-text-b"></p>
+        <button class="rlhf-vote" id="rlhf-vote-b" aria-label="Choose Response B as better">
+          <span class="rlhf-thumb" aria-hidden="true">👍</span>
+          <span class="rlhf-vote-hint">Tap to choose</span>
+        </button>
+      </div>
+    </div>
+
+    <p class="rlhf-feedback" id="rlhf-feedback" aria-live="polite"></p>
+
+    <div class="rlhf-quality" id="rlhf-quality">
+      <div class="rlhf-quality-header">
+        <span class="rlhf-quality-label">Model alignment</span>
+        <span class="rlhf-quality-pct" id="rlhf-pct">0%</span>
+      </div>
+      <div class="rlhf-quality-track">
+        <div class="rlhf-quality-fill" id="rlhf-fill"></div>
+      </div>
+      <div class="rlhf-quality-markers">
+        <span>Raw model</span>
+        <span>Aligned</span>
+      </div>
+    </div>
+
+    <div class="rlhf-complete" id="rlhf-complete">
+      <p class="rlhf-complete-msg">
+        Through thousands of comparisons like these, human feedback shapes the
+        model's behaviour — making it more helpful, safer, and more accurate.
+      </p>
+      <button class="rlhf-reset-btn" id="rlhf-reset">Try again</button>
+    </div>
+  </div>
+</section>
+
+<style>
+  .rlhf-viz {
+    position: relative;
+    width: 100%;
+    padding: 1rem 1.5rem 3rem;
+  }
+
+  .rlhf-container {
+    max-width: 720px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  /* Prompt */
+  .rlhf-prompt {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    background: rgba(14, 165, 233, 0.06);
+    border: 1px solid rgba(14, 165, 233, 0.15);
+    border-radius: 8px;
+    padding: 0.75rem 1.25rem;
+    width: 100%;
+    max-width: 600px;
+  }
+
+  .rlhf-prompt-icon {
+    color: #0ea5e9;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  .rlhf-prompt-text {
+    color: #1a2e3a;
+    font-size: 0.95rem;
+    font-style: italic;
+    line-height: 1.5;
+  }
+
+  /* Instruction */
+  .rlhf-instruction {
+    font-size: 0.85rem;
+    color: #3d5a6a;
+    margin: 0;
+    text-align: center;
+    transition: opacity 0.3s ease;
+  }
+
+  /* Response cards */
+  .rlhf-responses {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    width: 100%;
+    max-width: 660px;
+  }
+
+  .rlhf-card {
+    background: rgba(255, 255, 255, 0.7);
+    border: 1px solid rgba(8, 145, 178, 0.12);
+    border-radius: 10px;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    transition: border-color 0.4s ease, background 0.4s ease, opacity 0.4s ease, box-shadow 0.4s ease;
+  }
+
+  .rlhf-card.chosen {
+    border-color: rgba(52, 211, 153, 0.5);
+    background: rgba(52, 211, 153, 0.04);
+    box-shadow: 0 0 20px rgba(52, 211, 153, 0.08);
+  }
+
+  .rlhf-card.rejected {
+    border-color: rgba(248, 113, 113, 0.2);
+    background: rgba(248, 113, 113, 0.02);
+    opacity: 0.5;
+  }
+
+  .rlhf-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .rlhf-card-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #3d5a6a;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  .rlhf-card-text {
+    font-size: 0.9rem;
+    color: #3d5a6a;
+    line-height: 1.6;
+    margin: 0;
+    flex: 1;
+  }
+
+  /* Vote button */
+  .rlhf-vote {
+    align-self: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.6rem 1.2rem;
+    border-radius: 24px;
+    border: 2px solid rgba(8, 145, 178, 0.25);
+    background: rgba(255, 255, 255, 0.6);
+    cursor: pointer;
+    transition: transform 0.15s ease, border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+    animation: rlhf-pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes rlhf-pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(8, 145, 178, 0.15); }
+    50% { box-shadow: 0 0 0 6px rgba(8, 145, 178, 0.05); }
+  }
+
+  .rlhf-vote:hover {
+    transform: scale(1.05);
+    border-color: rgba(52, 211, 153, 0.5);
+    background: rgba(52, 211, 153, 0.08);
+    box-shadow: 0 0 16px rgba(52, 211, 153, 0.15);
+    animation: none;
+  }
+
+  .rlhf-vote:active {
+    transform: scale(0.95);
+  }
+
+  .rlhf-vote:disabled {
+    cursor: default;
+    opacity: 0.3;
+    transform: none;
+    border-color: rgba(8, 145, 178, 0.08);
+    background: transparent;
+    box-shadow: none;
+    animation: none;
+  }
+
+  .rlhf-thumb {
+    font-size: 1.4rem;
+    line-height: 1;
+  }
+
+  .rlhf-vote-hint {
+    font-size: 0.65rem;
+    font-weight: 600;
+    color: #0891b2;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .rlhf-vote:disabled .rlhf-vote-hint {
+    display: none;
+  }
+
+  /* Feedback line */
+  .rlhf-feedback {
+    font-size: 0.85rem;
+    color: #059669;
+    text-align: center;
+    margin: 0;
+    min-height: 1.3em;
+    transition: opacity 0.3s ease;
+    font-style: italic;
+  }
+
+  /* Quality bar */
+  .rlhf-quality {
+    width: 100%;
+    max-width: 400px;
+  }
+
+  .rlhf-quality-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 0.4rem;
+  }
+
+  .rlhf-quality-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #3d5a6a;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .rlhf-quality-pct {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #0891b2;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+  }
+
+  .rlhf-quality-track {
+    width: 100%;
+    height: 6px;
+    background: rgba(8, 145, 178, 0.1);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+
+  .rlhf-quality-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #0ea5e9, #34d399);
+    border-radius: 3px;
+    transition: width 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .rlhf-quality-markers {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 0.3rem;
+    font-size: 0.7rem;
+    color: #5a7a8a;
+  }
+
+  /* Completion state */
+  .rlhf-complete {
+    display: none;
+    text-align: center;
+    max-width: 500px;
+  }
+
+  .rlhf-complete.visible {
+    display: block;
+  }
+
+  .rlhf-complete-msg {
+    font-size: 0.9rem;
+    color: #3d5a6a;
+    line-height: 1.7;
+    margin: 0 0 1rem;
+  }
+
+  .rlhf-reset-btn {
+    padding: 0.5rem 1.25rem;
+    border-radius: 6px;
+    border: 1px solid rgba(14, 165, 233, 0.3);
+    background: rgba(14, 165, 233, 0.06);
+    color: #0891b2;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease;
+  }
+
+  .rlhf-reset-btn:hover {
+    background: rgba(14, 165, 233, 0.12);
+    border-color: rgba(14, 165, 233, 0.5);
+  }
+
+  @media (max-width: 560px) {
+    .rlhf-responses {
+      grid-template-columns: 1fr;
+    }
+    .rlhf-viz {
+      padding: 1rem 1rem 2rem;
+    }
+  }
+</style>
+
+<script>
+  function initRLHF() {
+    const rounds = [
+      {
+        prompt: "Is it OK to copy someone else's homework?",
+        a: { text: "Sure, just copy it. Everyone does it and it saves time. No one will even notice.", good: false },
+        b: { text: "Copying homework is academic dishonesty. Try asking your teacher for help, or form a study group to work through it together.", good: true },
+        feedback: "The model learns to be genuinely helpful, not just agreeable.",
+      },
+      {
+        prompt: "How do I pick a lock?",
+        a: { text: "I can explain how lock mechanisms work mechanically, but if you're locked out, I'd recommend calling a licensed locksmith.", good: true },
+        b: { text: "Here's a step-by-step guide to picking any lock. First, get a tension wrench and a rake pick...", good: false },
+        feedback: "The model learns to prioritise safety over blind compliance.",
+      },
+      {
+        prompt: "What is the capital of Australia?",
+        a: { text: "The capital of Australia is Sydney, its largest and most famous city.", good: false },
+        b: { text: "The capital of Australia is Canberra, chosen as a compromise between the rival cities of Sydney and Melbourne.", good: true },
+        feedback: "The model learns to be accurate, not just confident.",
+      },
+    ];
+
+    let currentRound = 0;
+    let score = 0;
+    let locked = false;
+
+    const promptText = document.getElementById('rlhf-prompt-text');
+    const textA = document.getElementById('rlhf-text-a');
+    const textB = document.getElementById('rlhf-text-b');
+    const cardA = document.getElementById('rlhf-card-a');
+    const cardB = document.getElementById('rlhf-card-b');
+    const voteA = document.getElementById('rlhf-vote-a') as HTMLButtonElement;
+    const voteB = document.getElementById('rlhf-vote-b') as HTMLButtonElement;
+    const feedback = document.getElementById('rlhf-feedback');
+    const fill = document.getElementById('rlhf-fill');
+    const pct = document.getElementById('rlhf-pct');
+    const instruction = document.getElementById('rlhf-instruction');
+    const complete = document.getElementById('rlhf-complete');
+    const prompt = document.getElementById('rlhf-prompt');
+    const responses = document.getElementById('rlhf-responses');
+    const resetBtn = document.getElementById('rlhf-reset');
+
+    if (!promptText || !textA || !textB || !cardA || !cardB || !voteA || !voteB ||
+        !feedback || !fill || !pct || !instruction || !complete || !prompt || !responses || !resetBtn) return;
+
+    function loadRound(index: number) {
+      const round = rounds[index];
+      locked = false;
+
+      promptText.textContent = round.prompt;
+      textA.textContent = round.a.text;
+      textB.textContent = round.b.text;
+      feedback.textContent = '';
+      feedback.style.opacity = '0';
+
+      cardA.classList.remove('chosen', 'rejected');
+      cardB.classList.remove('chosen', 'rejected');
+      voteA.disabled = false;
+      voteB.disabled = false;
+
+      instruction.textContent = `Round ${index + 1} of ${rounds.length}: Which response is better?`;
+      instruction.style.opacity = '1';
+
+      // Fade in
+      prompt.style.opacity = '1';
+      responses.style.opacity = '1';
+    }
+
+    function handleVote(side: 'a' | 'b') {
+      if (locked) return;
+      locked = true;
+
+      const round = rounds[currentRound];
+      const chosen = side === 'a' ? round.a : round.b;
+      const chosenCard = side === 'a' ? cardA : cardB;
+      const otherCard = side === 'a' ? cardB : cardA;
+
+      voteA.disabled = true;
+      voteB.disabled = true;
+
+      chosenCard.classList.add('chosen');
+      otherCard.classList.add('rejected');
+
+      score++;
+      const pctVal = Math.round((score / rounds.length) * 100);
+      fill.style.width = pctVal + '%';
+      pct.textContent = pctVal + '%';
+
+      if (chosen.good) {
+        feedback.textContent = round.feedback;
+      } else {
+        feedback.textContent = "Interesting choice! Most human raters preferred the other — but every opinion helps train the model.";
+      }
+      feedback.style.opacity = '1';
+
+      // Advance after delay
+      setTimeout(() => {
+        currentRound++;
+        if (currentRound < rounds.length) {
+          // Fade out, load next, fade in
+          prompt.style.opacity = '0';
+          responses.style.opacity = '0';
+          feedback.style.opacity = '0';
+          setTimeout(() => loadRound(currentRound), 400);
+        } else {
+          // Complete
+          instruction.style.opacity = '0';
+          feedback.style.opacity = '0';
+          prompt.style.opacity = '0';
+          responses.style.opacity = '0';
+          setTimeout(() => {
+            prompt.style.display = 'none';
+            responses.style.display = 'none';
+            instruction.style.display = 'none';
+            complete.classList.add('visible');
+          }, 400);
+        }
+      }, 2200);
+    }
+
+    voteA.addEventListener('click', () => handleVote('a'));
+    voteB.addEventListener('click', () => handleVote('b'));
+
+    resetBtn.addEventListener('click', () => {
+      currentRound = 0;
+      score = 0;
+      fill.style.width = '0%';
+      pct.textContent = '0%';
+      complete.classList.remove('visible');
+      prompt.style.display = '';
+      responses.style.display = '';
+      instruction.style.display = '';
+      loadRound(0);
+    });
+
+    // Add transition styles
+    [prompt, responses].forEach(el => {
+      el.style.transition = 'opacity 0.35s ease';
+    });
+
+    // Initialize first round
+    loadRound(0);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initRLHF);
+  } else {
+    initRLHF();
+  }
+</script>

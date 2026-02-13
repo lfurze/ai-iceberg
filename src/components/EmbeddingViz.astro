@@ -1,451 +1,565 @@
 ---
 /**
- * EmbeddingViz.astro — Word embedding vector space visualization
+ * EmbeddingViz.astro — 3D rotating word embedding space
  *
- * Shows a 2D projection of "meaning space" with words plotted as labeled dots,
- * semantic clusters, and the classic king - man + woman ≈ queen vector arithmetic.
+ * Canvas-based 3D point cloud showing word embeddings in "meaning space."
+ * Clusters of semantically similar words with constellation-like connections,
+ * plus the Paris-France / Tokyo-Japan vector analogy showing how directions
+ * encode relationships.
  *
- * All positions are hand-tuned to create a clear, readable layout in a
- * ~700x500 SVG coordinate space. Clusters are placed to avoid overlap.
+ * Auto-rotates gently around the Y axis. Drag to rotate manually.
+ * IntersectionObserver starts/stops animation when off-screen.
  */
-
-interface WordPoint {
-  word: string;
-  x: number;
-  y: number;
-  cluster: string;
-}
-
-const words: WordPoint[] = [
-  // Royalty cluster (top-right area)
-  { word: "king",     x: 520, y: 120, cluster: "royalty" },
-  { word: "queen",    x: 580, y: 200, cluster: "royalty" },
-  { word: "prince",   x: 490, y: 190, cluster: "royalty" },
-  { word: "princess", x: 550, y: 265, cluster: "royalty" },
-
-  // Gender anchors (left-center)
-  { word: "man",      x: 160, y: 160, cluster: "people" },
-  { word: "woman",    x: 220, y: 240, cluster: "people" },
-  { word: "boy",      x: 130, y: 230, cluster: "people" },
-
-  // Animals cluster (bottom-left)
-  { word: "cat",      x: 110, y: 390, cluster: "animals" },
-  { word: "dog",      x: 180, y: 410, cluster: "animals" },
-  { word: "pet",      x: 150, y: 350, cluster: "animals" },
-
-  // Vehicles cluster (bottom-right)
-  { word: "car",      x: 500, y: 380, cluster: "vehicles" },
-  { word: "truck",    x: 570, y: 400, cluster: "vehicles" },
-];
-
-const clusterColors: Record<string, string> = {
-  royalty:  "#fbbf24",
-  people:   "#38bdf8",
-  animals:  "#34d399",
-  vehicles: "#a78bfa",
-};
-
-const clusterLabels: Record<string, string> = {
-  royalty:  "Royalty",
-  people:   "People",
-  animals:  "Animals",
-  vehicles: "Vehicles",
-};
-
-// Vector arithmetic: king - man + woman ≈ queen
-// Arrow 1: man → king   (represents the "royalty" direction)
-// Arrow 2: woman → queen (same direction applied from woman)
-const vectorArrows = [
-  { x1: 160, y1: 160, x2: 520, y2: 120, label: "man → king",    id: "arrow-mk" },
-  { x1: 220, y1: 240, x2: 580, y2: 200, label: "woman → queen", id: "arrow-wq" },
-];
 ---
 
-<section class="embedding-viz" id="embedding-viz-section" aria-label="Word embeddings vector space visualization">
-  <div class="embedding-viz__inner">
-
-    <div class="embedding-viz__vis-col">
-      <svg
-        class="embedding-viz__svg"
-        id="embedding-svg"
-        viewBox="0 0 700 480"
-        preserveAspectRatio="xMidYMid meet"
-        role="img"
-        aria-label="2D projection of word embedding space showing semantic clusters and the king minus man plus woman equals queen vector analogy"
-      >
-        <!-- Subtle grid background -->
-        <defs>
-          <pattern id="embed-grid" width="40" height="40" patternUnits="userSpaceOnUse">
-            <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(255,255,255,0.03)" stroke-width="0.5"/>
-          </pattern>
-          <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto" markerUnits="strokeWidth">
-            <path d="M0,0 L8,3 L0,6" fill="#00d4ff" opacity="0.7"/>
-          </marker>
-          <marker id="arrowhead-dashed" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto" markerUnits="strokeWidth">
-            <path d="M0,0 L8,3 L0,6" fill="#fbbf24" opacity="0.7"/>
-          </marker>
-        </defs>
-
-        <!-- Grid background -->
-        <rect width="700" height="480" fill="url(#embed-grid)" rx="12"/>
-
-        <!-- Cluster background ellipses -->
-        <ellipse cx="540" cy="190" rx="95" ry="95" fill="rgba(251,191,36,0.04)" stroke="rgba(251,191,36,0.1)" stroke-width="1" stroke-dasharray="4 4" data-embed-cluster="royalty"/>
-        <ellipse cx="170" cy="210" rx="85" ry="75" fill="rgba(56,189,248,0.04)" stroke="rgba(56,189,248,0.1)" stroke-width="1" stroke-dasharray="4 4" data-embed-cluster="people"/>
-        <ellipse cx="150" cy="385" rx="75" ry="55" fill="rgba(52,211,153,0.04)" stroke="rgba(52,211,153,0.1)" stroke-width="1" stroke-dasharray="4 4" data-embed-cluster="animals"/>
-        <ellipse cx="535" cy="390" rx="70" ry="40" fill="rgba(167,139,250,0.04)" stroke="rgba(167,139,250,0.1)" stroke-width="1" stroke-dasharray="4 4" data-embed-cluster="vehicles"/>
-
-        <!-- Vector arrows (hidden initially, revealed by animation) -->
-        {vectorArrows.map((arrow) => (
-          <g data-embed-arrow={arrow.id} opacity="0">
-            <line
-              x1={arrow.x1} y1={arrow.y1}
-              x2={arrow.x2} y2={arrow.y2}
-              stroke={arrow.id === "arrow-wq" ? "#fbbf24" : "#00d4ff"}
-              stroke-width="2"
-              stroke-dasharray={arrow.id === "arrow-wq" ? "6 4" : "none"}
-              marker-end={arrow.id === "arrow-wq" ? "url(#arrowhead-dashed)" : "url(#arrowhead)"}
-              opacity="0.6"
-            />
-          </g>
-        ))}
-
-        <!-- Parallel indicator lines connecting the two arrows -->
-        <g data-embed-parallel opacity="0">
-          <line x1="160" y1="160" x2="220" y2="240" stroke="rgba(255,255,255,0.15)" stroke-width="1" stroke-dasharray="3 3"/>
-          <line x1="520" y1="120" x2="580" y2="200" stroke="rgba(255,255,255,0.15)" stroke-width="1" stroke-dasharray="3 3"/>
-        </g>
-
-        <!-- Word dots and labels -->
-        {words.map((w, i) => (
-          <g
-            class="embedding-viz__point"
-            data-embed-point={i}
-            data-embed-word={w.word}
-            data-embed-cluster-name={w.cluster}
-            opacity="0"
-          >
-            {/* Glow ring */}
-            <circle cx={w.x} cy={w.y} r="14" fill="none" stroke={clusterColors[w.cluster]} stroke-width="1" opacity="0.2"/>
-            {/* Dot */}
-            <circle cx={w.x} cy={w.y} r="5" fill={clusterColors[w.cluster]} opacity="0.9"/>
-            {/* Label */}
-            <text
-              x={w.x}
-              y={w.y - 18}
-              text-anchor="middle"
-              fill="rgba(255,255,255,0.8)"
-              font-size="12"
-              font-weight="500"
-              font-family="Inter, system-ui, sans-serif"
-            >
-              {w.word}
-            </text>
-          </g>
-        ))}
-
-        <!-- Equation annotation (hidden initially) -->
-        <g data-embed-equation opacity="0">
-          <rect x="230" y="430" width="240" height="32" rx="6" fill="rgba(0,0,0,0.5)" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
-          <text x="350" y="451" text-anchor="middle" fill="rgba(255,255,255,0.8)" font-size="13" font-weight="600" font-family="Inter, system-ui, sans-serif">
-            king − man + woman ≈ queen
-          </text>
-        </g>
-      </svg>
-
-      <!-- Cluster legend -->
-      <div class="embedding-viz__legend" data-embed-legend>
-        {Object.entries(clusterLabels).map(([key, label]) => (
-          <div class="embedding-viz__legend-item">
-            <span class="embedding-viz__legend-dot" style={`background: ${clusterColors[key]}`}></span>
-            <span>{label}</span>
-          </div>
-        ))}
-      </div>
+<section class="embed-section" id="embedding-viz-section" aria-label="Word embeddings 3D visualization">
+  <div class="embed-container">
+    <div class="embed-text-content" data-embed="text">
+      <h2 class="embed-heading">Meaning Space</h2>
+      <p class="embed-desc">
+        Every word becomes a point in this space. As the model trains on billions
+        of sentences, it learns to place words that appear in similar contexts near
+        each other. The result is a rich geometric landscape where relationships
+        between words are captured as <strong>directions</strong> and
+        <strong>distances</strong>.
+      </p>
     </div>
 
-    <div class="embedding-viz__text-col" data-embed-text>
-      <div class="embedding-viz__explainer">
-        <h3 class="embedding-viz__title">Embeddings: GPS Coordinates in Meaning Space</h3>
-        <p>
-          Before a model can reason about words, it converts each token into a list of numbers called
-          an <strong>embedding</strong> &mdash; essentially GPS coordinates in a high-dimensional
-          &ldquo;meaning space.&rdquo;
-        </p>
-        <p>
-          Words with similar meanings cluster together. <em>King</em>, <em>queen</em>, <em>prince</em>,
-          and <em>princess</em> occupy the same neighborhood &mdash; as do <em>cat</em>, <em>dog</em>,
-          and <em>pet</em>.
-        </p>
-        <p>
-          The most famous discovery: <strong>directions encode relationships</strong>.
-          The direction from &ldquo;man&rdquo; to &ldquo;king&rdquo; captures the concept of royalty.
-          Apply that same direction from &ldquo;woman&rdquo; and you land near &ldquo;queen.&rdquo;
-        </p>
-        <p class="embedding-viz__formula">
-          king &minus; man + woman &asymp; queen
-        </p>
-        <p>
-          These positions are <strong>learned during training</strong>, not hand-coded &mdash; the model
-          discovers semantic structure by predicting which words appear in similar contexts, millions
-          of times over.
-        </p>
-        <p class="embedding-viz__cite">
-          First demonstrated by Mikolov et al. (2013) with Word2Vec. Modern LLMs use contextual embeddings
-          where a word&rsquo;s position shifts depending on the sentence around it.
-        </p>
-      </div>
+    <div class="embed-canvas-wrap" data-embed="canvas-wrap">
+      <canvas id="embedding-canvas"
+        role="img"
+        aria-label="3D rotating visualization of word embedding space showing clusters of similar words: places like Paris, Tokyo, London; animals like dog, cat, puppy; emotions like happy, sad, love; and science terms like atom, cell, DNA. The direction from France to Paris is the same as from Japan to Tokyo, encoding the capital-of relationship."
+      ></canvas>
+    </div>
+
+    <div class="embed-legend" data-embed="legend">
+      <span class="embed-legend-item">
+        <span class="embed-legend-dot" style="background: #38bdf8"></span>Places
+      </span>
+      <span class="embed-legend-item">
+        <span class="embed-legend-dot" style="background: #34d399"></span>Animals
+      </span>
+      <span class="embed-legend-item">
+        <span class="embed-legend-dot" style="background: #fb7185"></span>Emotions
+      </span>
+      <span class="embed-legend-item">
+        <span class="embed-legend-dot" style="background: #a78bfa"></span>Science
+      </span>
+    </div>
+
+    <div class="embed-analogy-wrap" data-embed="analogy">
+      <p class="embed-formula">Paris &minus; France + Japan &asymp; Tokyo</p>
+      <p class="embed-analogy-explain">
+        The direction from France to Paris encodes the concept <em>"capital of."</em>
+        Apply that same direction starting from Japan and you land near Tokyo. The model
+        discovers these geometric relationships entirely on its own, by predicting which
+        words appear in similar contexts across billions of sentences.
+      </p>
+      <p class="embed-cite">
+        First demonstrated by Mikolov et al. (2013) with Word2Vec. Modern LLMs use
+        <strong>contextual embeddings</strong> where a word's position shifts depending on
+        the sentence around it — "bank" moves toward finance or rivers depending on context.
+      </p>
     </div>
   </div>
 </section>
 
 <style>
-  .embedding-viz {
+  .embed-section {
     position: relative;
     width: 100%;
-    padding: 4rem 1.5rem;
+    padding: 2rem 1.5rem 4rem;
   }
 
-  .embedding-viz__inner {
-    max-width: 1100px;
+  .embed-container {
+    max-width: 800px;
     margin: 0 auto;
-    display: grid;
-    grid-template-columns: 1.3fr 1fr;
-    gap: 3rem;
-    align-items: start;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
   }
 
-  /* SVG visualization */
-  .embedding-viz__vis-col {
-    position: relative;
+  .embed-text-content {
+    text-align: center;
+    max-width: 640px;
   }
 
-  .embedding-viz__svg {
+  .embed-heading {
+    font-size: clamp(1.4rem, 3.5vw, 2rem);
+    font-weight: 700;
+    color: #1a2e3a;
+    margin: 0 0 0.75rem;
+    letter-spacing: -0.02em;
+  }
+
+  .embed-desc {
+    font-size: clamp(0.9rem, 2vw, 1.05rem);
+    color: #3d5a6a;
+    line-height: 1.7;
+    margin: 0;
+  }
+
+  .embed-desc strong {
+    color: #0369a1;
+  }
+
+  /* Canvas wrapper */
+  .embed-canvas-wrap {
     width: 100%;
-    height: auto;
-    display: block;
-    background: rgba(255, 255, 255, 0.01);
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    max-width: 700px;
+    aspect-ratio: 5 / 4;
     border-radius: 12px;
+    overflow: hidden;
+    background: rgba(230, 240, 245, 0.9);
+    border: 1px solid rgba(8, 145, 178, 0.15);
   }
 
-  .embedding-viz__point {
-    cursor: default;
+  #embedding-canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    cursor: grab;
   }
 
-  .embedding-viz__point:hover circle:first-child {
-    opacity: 0.5;
-    r: 18;
+  #embedding-canvas:active {
+    cursor: grabbing;
   }
 
   /* Legend */
-  .embedding-viz__legend {
+  .embed-legend {
     display: flex;
     gap: 1.5rem;
-    margin-top: 1rem;
+    flex-wrap: wrap;
     justify-content: center;
-    opacity: 0;
   }
 
-  .embedding-viz__legend-item {
+  .embed-legend-item {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.4rem;
     font-size: 0.8rem;
-    color: rgba(255, 255, 255, 0.5);
+    color: #3d5a6a;
+    font-family: 'Inter', system-ui, sans-serif;
   }
 
-  .embedding-viz__legend-dot {
+  .embed-legend-dot {
     width: 10px;
     height: 10px;
     border-radius: 50%;
     flex-shrink: 0;
   }
 
-  /* Text column */
-  .embedding-viz__text-col {
-    opacity: 0;
-  }
-
-  .embedding-viz__explainer {
-    padding: 1.5rem;
-    background: rgba(255, 255, 255, 0.02);
-    border: 1px solid rgba(255, 255, 255, 0.06);
-    border-radius: 12px;
-    position: sticky;
-    top: 6rem;
-  }
-
-  .embedding-viz__title {
-    font-size: 1.25rem;
-    font-weight: 700;
-    color: rgba(255, 255, 255, 0.95);
-    margin-bottom: 1rem;
-  }
-
-  .embedding-viz__explainer p {
-    font-size: 0.95rem;
-    line-height: 1.7;
-    color: rgba(255, 255, 255, 0.6);
-    margin-bottom: 0.85rem;
-  }
-
-  .embedding-viz__explainer p:last-child {
-    margin-bottom: 0;
-  }
-
-  .embedding-viz__explainer strong {
-    color: #38bdf8;
-    font-weight: 600;
-  }
-
-  .embedding-viz__explainer em {
-    color: #fbbf24;
-    font-style: italic;
-  }
-
-  .embedding-viz__formula {
+  /* Analogy */
+  .embed-analogy-wrap {
+    max-width: 600px;
     text-align: center;
-    font-size: 1.1rem !important;
+  }
+
+  .embed-formula {
+    font-size: 1.15rem;
     font-weight: 600;
-    color: rgba(255, 255, 255, 0.85) !important;
-    padding: 0.75rem 1rem;
-    background: rgba(0, 212, 255, 0.05);
-    border: 1px solid rgba(0, 212, 255, 0.15);
+    color: #1a2e3a;
+    padding: 0.75rem 1.25rem;
+    background: rgba(8, 145, 178, 0.06);
+    border: 1px solid rgba(8, 145, 178, 0.2);
     border-radius: 8px;
     font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
     letter-spacing: 0.02em;
+    margin: 0 0 1rem;
   }
 
-  .embedding-viz__cite {
-    font-size: 0.85rem !important;
+  .embed-analogy-explain {
+    font-size: 0.95rem;
+    color: #3d5a6a;
+    line-height: 1.7;
+    margin: 0 0 0.75rem;
+  }
+
+  .embed-analogy-explain em {
+    color: #0369a1;
     font-style: italic;
-    color: rgba(255, 255, 255, 0.4) !important;
+  }
+
+  .embed-cite {
+    font-size: 0.85rem;
+    font-style: italic;
+    color: #5a7a8a;
     padding-left: 1rem;
-    border-left: 2px solid rgba(56, 189, 248, 0.2);
+    border-left: 2px solid rgba(8, 145, 178, 0.25);
+    text-align: left;
+    margin: 0;
   }
 
-  /* Responsive */
-  @media (max-width: 768px) {
-    .embedding-viz {
-      padding: 2.5rem 1rem;
-    }
-
-    .embedding-viz__inner {
-      grid-template-columns: 1fr;
-      gap: 2rem;
-    }
-
-    .embedding-viz__explainer {
-      position: static;
-    }
+  .embed-cite strong {
+    color: #3d5a6a;
+    font-weight: 600;
   }
 
-  @media (prefers-reduced-motion: reduce) {
-    .embedding-viz__point:hover circle:first-child {
-      transition: none;
+  @media (max-width: 640px) {
+    .embed-section {
+      padding: 1.5rem 1rem 3rem;
+    }
+    .embed-legend {
+      gap: 1rem;
     }
   }
 </style>
 
 <script>
-  /**
-   * EmbeddingViz animation — GSAP ScrollTrigger orchestration
-   *
-   * Animation sequence:
-   * 1. Word points fade in by cluster (staggered)
-   * 2. Cluster backgrounds pulse gently
-   * 3. Vector arrows draw in (man→king first, then woman→queen)
-   * 4. Equation label fades in
-   * 5. Explanation text slides in
-   *
-   * GSAP targets:
-   *   - [data-embed-point]           : word dots (opacity)
-   *   - [data-embed-arrow]           : vector arrows (opacity)
-   *   - [data-embed-parallel]        : parallel connector lines (opacity)
-   *   - [data-embed-equation]        : equation label (opacity)
-   *   - [data-embed-legend]          : cluster legend (opacity)
-   *   - [data-embed-text]            : explanation column (opacity, x)
-   */
   function initEmbeddingViz() {
-    const gsap = (window as any).gsap;
-    const ScrollTrigger = (window as any).ScrollTrigger;
-
+    const canvas = document.getElementById('embedding-canvas') as HTMLCanvasElement;
     const section = document.getElementById('embedding-viz-section');
-    if (!section) return;
+    if (!canvas || !section) return;
 
-    const points = section.querySelectorAll('[data-embed-point]');
-    const arrowMK = section.querySelector('[data-embed-arrow="arrow-mk"]');
-    const arrowWQ = section.querySelector('[data-embed-arrow="arrow-wq"]');
-    const parallel = section.querySelector('[data-embed-parallel]');
-    const equation = section.querySelector('[data-embed-equation]');
-    const legend = section.querySelector('[data-embed-legend]');
-    const textCol = section.querySelector('[data-embed-text]');
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
 
-    if (!gsap || !ScrollTrigger) {
-      // Fallback: show everything
-      [points, [arrowMK, arrowWQ, parallel, equation, legend, textCol]].flat().forEach(el => {
-        if (el instanceof HTMLElement || el instanceof SVGElement) {
-          el.style.opacity = '1';
-          if (el instanceof SVGElement) {
-            el.setAttribute('opacity', '1');
-          }
-        }
-      });
-      points.forEach(p => p?.setAttribute('opacity', '1'));
-      return;
+    // --- Cluster colors ---
+    const clusterColors: Record<string, string> = {
+      places: '#38bdf8',
+      animals: '#34d399',
+      emotions: '#fb7185',
+      science: '#a78bfa',
+    };
+
+    // --- 3D word positions ---
+    // Paris-France vector = (40, -30, 30); Japan + that = Tokyo ✓
+    const points3D = [
+      // Places (cyan)
+      { word: 'Paris',   x: -120, y: -65,  z: 65,   cluster: 'places' },
+      { word: 'France',  x: -170, y: -26,  z: 26,   cluster: 'places' },
+      { word: 'Tokyo',   x: -65,  y: -90,  z: -65,  cluster: 'places' },
+      { word: 'Japan',   x: -120, y: -52,  z: -104, cluster: 'places' },
+      { word: 'London',  x: -145, y: -78,  z: 13,   cluster: 'places' },
+      { word: 'England', x: -195, y: -39,  z: -26,  cluster: 'places' },
+
+      // Animals (green)
+      { word: 'dog',    x: 130,  y: 65,   z: -39,  cluster: 'animals' },
+      { word: 'puppy',  x: 90,   y: 104,  z: -13,  cluster: 'animals' },
+      { word: 'cat',    x: 170,  y: 78,   z: 39,   cluster: 'animals' },
+      { word: 'kitten', x: 130,  y: 117,  z: 65,   cluster: 'animals' },
+      { word: 'bird',   x: 90,   y: 39,   z: -65,  cluster: 'animals' },
+
+      // Emotions (pink)
+      { word: 'happy', x: -39,  y: 130,  z: 104,  cluster: 'emotions' },
+      { word: 'sad',   x: 13,   y: 156,  z: 65,   cluster: 'emotions' },
+      { word: 'angry', x: -13,  y: 117,  z: 143,  cluster: 'emotions' },
+      { word: 'love',  x: -65,  y: 143,  z: 52,   cluster: 'emotions' },
+
+      // Science (purple)
+      { word: 'atom', x: 143,  y: -130, z: 52,   cluster: 'science' },
+      { word: 'cell', x: 104,  y: -104, z: 26,   cluster: 'science' },
+      { word: 'gene', x: 130,  y: -143, z: 78,   cluster: 'science' },
+      { word: 'DNA',  x: 170,  y: -117, z: 104,  cluster: 'science' },
+    ];
+
+    // Analogy arrows: France→Paris (solid), Japan→Tokyo (dashed)
+    const analogyPairs = [
+      { from: 'France', to: 'Paris', dashed: false },
+      { from: 'Japan',  to: 'Tokyo', dashed: true },
+    ];
+
+    // --- Animation state ---
+    let rotY = 0;
+    let animId: number | null = null;
+    let w = 0;
+    let h = 0;
+    let cx = 0;
+    let cy = 0;
+    let isVisible = false;
+    let isDragging = false;
+    let dragStartX = 0;
+    let dragRotStart = 0;
+    const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const autoSpeed = prefersReduced ? 0 : 0.003;
+
+    // --- Canvas setup ---
+    function resize() {
+      const rect = canvas.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      w = rect.width;
+      h = rect.height;
+      canvas.width = w * dpr;
+      canvas.height = h * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      cx = w / 2;
+      cy = h / 2;
     }
 
-    const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    // --- 3D → 2D perspective projection ---
+    function project(x: number, y: number, z: number) {
+      const cosR = Math.cos(rotY);
+      const sinR = Math.sin(rotY);
+      const rx = x * cosR - z * sinR;
+      const rz = x * sinR + z * cosR;
+      const fov = 500;
+      const s = fov / (fov + rz);
+      return {
+        sx: rx * s + cx,
+        sy: -y * s + cy,  // flip Y: positive = up
+        scale: s,
+        rz,
+      };
+    }
 
-    // Group points by cluster for staggered reveal
-    const clusters = ['people', 'royalty', 'animals', 'vehicles'];
-    const clusteredPoints: SVGElement[][] = clusters.map(c =>
-      Array.from(section.querySelectorAll(`[data-embed-cluster-name="${c}"]`)) as SVGElement[]
-    );
+    // --- Draw perspective grid at y=0 ---
+    function drawGrid() {
+      ctx.beginPath();
+      const lines = [-200, -100, 0, 100, 200];
+      const ext = 250;
 
-    const tl = gsap.timeline({
-      scrollTrigger: {
-        trigger: section,
-        start: 'top 70%',
-        end: 'bottom 25%',
-        toggleActions: 'play none none reverse',
-      },
-    });
+      for (const gz of lines) {
+        const a = project(-ext, 0, gz);
+        const b = project(ext, 0, gz);
+        ctx.moveTo(a.sx, a.sy);
+        ctx.lineTo(b.sx, b.sy);
+      }
+      for (const gx of lines) {
+        const a = project(gx, 0, -ext);
+        const b = project(gx, 0, ext);
+        ctx.moveTo(a.sx, a.sy);
+        ctx.lineTo(b.sx, b.sy);
+      }
 
-    if (prefersReduced) {
-      // Simple reveal
-      tl.set(points, { attr: { opacity: 1 } })
-        .set([arrowMK, arrowWQ], { attr: { opacity: 1 } })
-        .set(parallel, { attr: { opacity: 1 } })
-        .set(equation, { attr: { opacity: 1 } })
-        .to(legend, { opacity: 1, duration: 0.2 })
-        .to(textCol, { opacity: 1, duration: 0.2 }, '<');
-    } else {
-      // Stagger clusters in
-      let offset = 0;
-      clusteredPoints.forEach((clusterGroup, ci) => {
-        tl.to(clusterGroup, {
-          attr: { opacity: 1 },
-          duration: 0.4,
-          stagger: 0.08,
-          ease: 'power2.out',
-        }, offset);
-        offset += 0.2;
+      ctx.strokeStyle = 'rgba(0, 50, 80, 0.08)';
+      ctx.lineWidth = 0.5;
+      ctx.stroke();
+    }
+
+    // --- Draw constellation lines within clusters ---
+    function drawClusterLinks(proj: any[]) {
+      const clusters = Object.keys(clusterColors);
+
+      for (const cluster of clusters) {
+        const pts = proj.filter((p: any) => p.cluster === cluster);
+        const color = clusterColors[cluster];
+
+        for (let i = 0; i < pts.length; i++) {
+          for (let j = i + 1; j < pts.length; j++) {
+            const a = pts[i];
+            const b = pts[j];
+            const avgZ = (a.rz + b.rz) / 2;
+            const alpha = Math.max(0.03, Math.min(0.12, 0.08 - avgZ * 0.0002));
+
+            ctx.beginPath();
+            ctx.moveTo(a.sx, a.sy);
+            ctx.lineTo(b.sx, b.sy);
+            ctx.strokeStyle = color;
+            ctx.globalAlpha = alpha;
+            ctx.lineWidth = 0.8;
+            ctx.stroke();
+          }
+        }
+      }
+      ctx.globalAlpha = 1;
+    }
+
+    // --- Draw analogy arrows + parallelogram ---
+    function drawAnalogy(proj: any[]) {
+      const find = (name: string) => proj.find((p: any) => p.word === name);
+
+      for (const pair of analogyPairs) {
+        const from = find(pair.from);
+        const to = find(pair.to);
+        if (!from || !to) continue;
+
+        const avgZ = (from.rz + to.rz) / 2;
+        const alpha = Math.max(0.25, Math.min(0.75, 0.55 - avgZ * 0.001));
+
+        ctx.save();
+        ctx.globalAlpha = alpha;
+        ctx.strokeStyle = '#00d4ff';
+        ctx.lineWidth = 2;
+
+        if (pair.dashed) ctx.setLineDash([6, 4]);
+        else ctx.setLineDash([]);
+
+        ctx.beginPath();
+        ctx.moveTo(from.sx, from.sy);
+        ctx.lineTo(to.sx, to.sy);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Arrowhead
+        const angle = Math.atan2(to.sy - from.sy, to.sx - from.sx);
+        const hl = 8;
+        ctx.beginPath();
+        ctx.moveTo(to.sx, to.sy);
+        ctx.lineTo(to.sx - hl * Math.cos(angle - 0.35), to.sy - hl * Math.sin(angle - 0.35));
+        ctx.lineTo(to.sx - hl * Math.cos(angle + 0.35), to.sy - hl * Math.sin(angle + 0.35));
+        ctx.closePath();
+        ctx.fillStyle = '#00d4ff';
+        ctx.fill();
+
+        ctx.restore();
+      }
+
+      // Parallelogram connectors (thin dotted)
+      const france = find('France');
+      const japan = find('Japan');
+      const paris = find('Paris');
+      const tokyo = find('Tokyo');
+      if (france && japan && paris && tokyo) {
+        ctx.save();
+        ctx.setLineDash([2, 4]);
+        ctx.strokeStyle = 'rgba(0, 50, 80, 0.15)';
+        ctx.lineWidth = 1;
+
+        ctx.beginPath();
+        ctx.moveTo(france.sx, france.sy);
+        ctx.lineTo(japan.sx, japan.sy);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(paris.sx, paris.sy);
+        ctx.lineTo(tokyo.sx, tokyo.sy);
+        ctx.stroke();
+
+        ctx.setLineDash([]);
+        ctx.restore();
+      }
+    }
+
+    // --- Draw a single point with glow + label ---
+    function drawPoint(p: any) {
+      const color = clusterColors[p.cluster] || '#38bdf8';
+      const r = 7 * p.scale;
+      const alpha = Math.max(0.3, Math.min(1.0, 0.7 - p.rz * 0.0015));
+
+      ctx.save();
+
+      // Glow
+      ctx.globalAlpha = alpha * 0.18;
+      ctx.beginPath();
+      ctx.arc(p.sx, p.sy, r * 2.5, 0, Math.PI * 2);
+      ctx.fillStyle = color;
+      ctx.fill();
+
+      // Core dot
+      ctx.globalAlpha = alpha * 0.9;
+      ctx.beginPath();
+      ctx.arc(p.sx, p.sy, r, 0, Math.PI * 2);
+      ctx.fillStyle = color;
+      ctx.fill();
+
+      // Label
+      ctx.globalAlpha = alpha * 0.9;
+      const fontSize = Math.max(10, 13 * p.scale);
+      ctx.font = `600 ${fontSize}px Inter, system-ui, sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.fillStyle = 'rgba(26, 46, 58, 0.9)';
+      ctx.fillText(p.word, p.sx, p.sy - r - 7);
+
+      ctx.restore();
+    }
+
+    // --- Main render ---
+    function render() {
+      ctx.clearRect(0, 0, w, h);
+
+      drawGrid();
+
+      // Project all points
+      const proj = points3D.map(p => {
+        const pr = project(p.x, p.y, p.z);
+        return { ...p, ...pr };
       });
 
-      // Legend appears with the points
-      tl.to(legend, { opacity: 1, duration: 0.4, ease: 'power2.out' }, 0.3);
+      // Depth sort: far (high rz) drawn first
+      proj.sort((a, b) => b.rz - a.rz);
 
-      // Vector arrows draw in
-      tl.to(arrowMK, { attr: { opacity: 1 }, duration: 0.6, ease: 'power2.out' }, '+=0.2')
-        .to(arrowWQ, { attr: { opacity: 1 }, duration: 0.6, ease: 'power2.out' }, '-=0.3')
-        .to(parallel, { attr: { opacity: 1 }, duration: 0.4, ease: 'power2.out' }, '-=0.3')
-        .to(equation, { attr: { opacity: 1 }, duration: 0.5, ease: 'power2.out' }, '-=0.2');
+      drawClusterLinks(proj);
+      drawAnalogy(proj);
+      proj.forEach(p => drawPoint(p));
 
-      // Text column slides in
-      gsap.set(textCol, { x: 24 });
-      tl.to(textCol, { opacity: 1, x: 0, duration: 0.6, ease: 'power2.out' }, '-=0.5');
+      if (!isDragging) rotY += autoSpeed;
+
+      if (isVisible) {
+        animId = requestAnimationFrame(render);
+      }
+    }
+
+    // --- Start / stop ---
+    function start() {
+      if (animId) return;
+      isVisible = true;
+      resize();
+      render();
+    }
+
+    function stop() {
+      isVisible = false;
+      if (animId) {
+        cancelAnimationFrame(animId);
+        animId = null;
+      }
+    }
+
+    // --- Drag interaction (mouse) ---
+    canvas.addEventListener('mousedown', (e) => {
+      isDragging = true;
+      dragStartX = e.clientX;
+      dragRotStart = rotY;
+    });
+    window.addEventListener('mousemove', (e) => {
+      if (!isDragging) return;
+      rotY = dragRotStart + (e.clientX - dragStartX) * 0.005;
+    });
+    window.addEventListener('mouseup', () => { isDragging = false; });
+
+    // --- Drag interaction (touch) ---
+    canvas.addEventListener('touchstart', (e) => {
+      isDragging = true;
+      dragStartX = e.touches[0].clientX;
+      dragRotStart = rotY;
+    }, { passive: true });
+    window.addEventListener('touchmove', (e) => {
+      if (!isDragging) return;
+      rotY = dragRotStart + (e.touches[0].clientX - dragStartX) * 0.005;
+    }, { passive: true });
+    window.addEventListener('touchend', () => { isDragging = false; });
+
+    // --- Visibility observer ---
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) start();
+          else stop();
+        });
+      },
+      { threshold: 0.1 },
+    );
+    observer.observe(section);
+
+    // --- Resize ---
+    window.addEventListener('resize', () => { if (isVisible) resize(); });
+
+    // --- GSAP text fade-ins ---
+    const gsap = (window as any).gsap;
+    const ScrollTrigger = (window as any).ScrollTrigger;
+    if (gsap && ScrollTrigger) {
+      const text = section.querySelector('[data-embed="text"]');
+      const wrap = section.querySelector('[data-embed="canvas-wrap"]');
+      const legend = section.querySelector('[data-embed="legend"]');
+      const analogy = section.querySelector('[data-embed="analogy"]');
+
+      gsap.from(text, {
+        opacity: 0, y: 20, duration: 0.6,
+        scrollTrigger: { trigger: section, start: 'top 80%', toggleActions: 'play none none reverse' },
+      });
+      gsap.from(wrap, {
+        opacity: 0, y: 15, duration: 0.6,
+        scrollTrigger: { trigger: section, start: 'top 75%', toggleActions: 'play none none reverse' },
+      });
+      gsap.from(legend, {
+        opacity: 0, duration: 0.4,
+        scrollTrigger: { trigger: section, start: 'top 70%', toggleActions: 'play none none reverse' },
+      });
+      gsap.from(analogy, {
+        opacity: 0, y: 15, duration: 0.6,
+        scrollTrigger: { trigger: section, start: 'top 65%', toggleActions: 'play none none reverse' },
+      });
     }
   }
 

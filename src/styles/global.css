@@ -1,44 +1,46 @@
 /* ============================================
-   AI Iceberg — Global Design System
+   AI Iceberg — Global Design System (Light Theme)
    ============================================ */
 
 /* --- Custom Properties --- */
 :root {
-  /* Background */
-  --bg-primary: #0a0a0f;
-  --bg-secondary: #0f0f18;
-  --bg-surface: #141420;
-  --bg-elevated: #1a1a2e;
+  /* Background — light teal-tinted palette */
+  --bg-primary: #f0f7f9;
+  --bg-secondary: #e6f0f3;
+  --bg-surface: #ffffff;
+  --bg-elevated: #ffffff;
 
-  /* Text */
-  --text-primary: #e8e8ed;
-  --text-secondary: #9898a8;
-  --text-muted: #5e5e72;
-  --text-accent: #00d4ff;
+  /* Text — dark navy/teal */
+  --text-primary: #1a2e3a;
+  --text-secondary: #3d5a6a;
+  --text-muted: #7e9aa8;
+  --text-accent: #0891b2;
 
-  /* Accent palette — Iceberg blues */
-  --accent-cyan: #00d4ff;
-  --accent-blue: #0ea5e9;
-  --accent-sky: #38bdf8;
-  --accent-teal: #14b8a6;
-  --accent-indigo: #6366f1;
+  /* Accent palette — Teal/cyan to match iceberg illustration */
+  --accent-cyan: #0891b2;
+  --accent-blue: #0369a1;
+  --accent-sky: #0284c7;
+  --accent-teal: #0d9488;
+  --accent-indigo: #4f46e5;
 
   /* Semantic colors */
   --ice-above: #d4eaf7;
   --ice-below: #1e6fa0;
-  --ocean-surface: #0c3d5f;
-  --ocean-deep: #061a2e;
+  --ocean-surface: #5ba8b5;
+  --ocean-deep: #2a5f6b;
   --water-line: #2196f3;
 
   /* Visualization accents */
-  --viz-purple: #a78bfa;
-  --viz-green: #34d399;
-  --viz-amber: #fbbf24;
-  --viz-rose: #fb7185;
+  --viz-purple: #7c3aed;
+  --viz-green: #059669;
+  --viz-amber: #d97706;
+  --viz-rose: #e11d48;
 
   /* Typography */
-  --font-sans: "Inter", "Inter var", ui-sans-serif, system-ui, -apple-system,
-    BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-display: "TT Backwards Sans", "Inter", ui-sans-serif, system-ui,
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-sans: "Futura", "Futura-Medium", ui-sans-serif, system-ui,
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, "SF Mono",
     Menlo, Consolas, monospace;
 
@@ -66,9 +68,9 @@
   --radius-sm: 0.375rem;
   --radius-md: 0.75rem;
   --radius-lg: 1rem;
-  --border-subtle: 1px solid rgba(255, 255, 255, 0.06);
+  --border-subtle: 1px solid rgba(0, 0, 0, 0.08);
 
-  /* Fluid Type Scale — vw coefficient increases with size */
+  /* Fluid Type Scale */
   --font-size-xs: clamp(0.75rem, 0.02vw + 0.74rem, 0.8rem);
   --font-size-sm: clamp(0.875rem, 0.08vw + 0.86rem, 0.95rem);
   --font-size-base: clamp(1rem, 0.2vw + 0.96rem, 1.125rem);
@@ -112,7 +114,7 @@ body {
   top: -100%;
   left: var(--space-md);
   background: var(--accent-cyan);
-  color: var(--bg-primary);
+  color: #fff;
   padding: var(--space-sm) var(--space-md);
   border-radius: var(--radius-sm);
   z-index: 10000;
@@ -129,6 +131,7 @@ h1,
 h2,
 h3,
 h4 {
+  font-family: var(--font-display);
   font-weight: 700;
   line-height: 1.2;
   letter-spacing: -0.02em;
@@ -138,7 +141,7 @@ h4 {
 h1 {
   font-size: var(--font-size-5xl);
   letter-spacing: -0.04em;
-  font-weight: 800;
+  font-weight: 700;
 }
 
 h2 {
@@ -160,7 +163,12 @@ p {
   font-size: var(--font-size-base);
 }
 
+strong {
+  color: var(--text-primary);
+}
+
 .label {
+  font-family: var(--font-sans);
   font-size: var(--font-size-xs);
   font-weight: 600;
   text-transform: uppercase;
@@ -244,7 +252,6 @@ p {
   -webkit-text-fill-color: transparent;
   background-clip: text;
   text-shadow: none;
-  filter: drop-shadow(0 0 40px rgba(0, 212, 255, 0.15));
 }
 
 .hero .subtitle {
@@ -313,7 +320,7 @@ p {
   position: relative;
   background: radial-gradient(
     ellipse at 50% 80%,
-    rgba(14, 165, 233, 0.04) 0%,
+    rgba(8, 145, 178, 0.06) 0%,
     transparent 50%
   );
 }
@@ -335,6 +342,7 @@ p {
 }
 
 .chapter-divider .chapter-number {
+  font-family: var(--font-sans);
   font-size: 0.75rem;
   font-weight: 600;
   text-transform: uppercase;
@@ -357,7 +365,7 @@ p {
 }
 
 .viz-wrapper {
-  background: var(--bg-secondary);
+  background: var(--bg-surface);
   border: var(--border-subtle);
   border-radius: var(--radius-lg);
   padding: var(--space-lg);
@@ -450,16 +458,16 @@ p {
 }
 
 .glow {
-  filter: drop-shadow(0 0 12px rgba(0, 212, 255, 0.4));
+  filter: drop-shadow(0 0 12px rgba(8, 145, 178, 0.3));
 }
 
 .glow-interactive {
-  filter: drop-shadow(0 0 8px rgba(0, 212, 255, 0.5));
+  filter: drop-shadow(0 0 8px rgba(8, 145, 178, 0.4));
   transition: filter 250ms var(--ease-out);
 }
 
 .glow-interactive:hover {
-  filter: drop-shadow(0 0 14px rgba(0, 212, 255, 0.7));
+  filter: drop-shadow(0 0 14px rgba(8, 145, 178, 0.6));
   transition: filter 100ms var(--ease-out);
 }
 
@@ -598,7 +606,7 @@ p {
 
 /* --- Selection --- */
 ::selection {
-  background: rgba(0, 212, 255, 0.3);
+  background: rgba(8, 145, 178, 0.2);
   color: var(--text-primary);
 }
 
@@ -612,7 +620,7 @@ p {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--bg-elevated);
+  background: #c0d0d8;
   border-radius: 3px;
 }
 

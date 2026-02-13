@@ -1,0 +1,669 @@
+---
+/**
+ * NeuralNetworkSVG.astro
+ *
+ * A simplified but accurate transformer architecture diagram.
+ * Shows: Input tokens -> Embedding -> N x (Self-Attention + Feed-Forward) -> Output -> Softmax -> Next token
+ *
+ * Features:
+ * - "Black box" effect: starts opaque, reveals internals on scroll
+ * - Animated data-flow pulses along connection paths
+ * - Clear layer labeling with accurate transformer terminology
+ * - All inline SVG, GSAP-triggerable via data attributes and IDs
+ */
+---
+
+<section id="neural-network-section" class="nn-section" aria-label="Neural network transformer architecture">
+  <div class="nn-container">
+    <div class="nn-text-content">
+      <h2 class="nn-heading" data-nn="heading">The LLM: a black box?</h2>
+      <p class="nn-description" data-nn="desc">
+        Large Language Models are often called "black boxes" because their internal connections
+        are so massively complex that no human could fully unravel them. But we <em>can</em>
+        understand the architecture. Let's open the box.
+      </p>
+    </div>
+
+    <div class="nn-viz-wrapper" data-nn="viz-wrapper">
+      <!-- The black box overlay that fades away -->
+      <div class="nn-blackbox-overlay" data-nn="blackbox" aria-hidden="true">
+        <span class="nn-blackbox-label">?</span>
+      </div>
+
+      <svg
+        id="nn-svg"
+        class="nn-svg"
+        viewBox="0 0 900 560"
+        xmlns="http://www.w3.org/2000/svg"
+        role="img"
+        aria-label="Transformer architecture diagram showing input tokens flowing through embedding, self-attention, feed-forward layers, and output softmax to produce next-token predictions"
+      >
+        <defs>
+          <!-- Glow filter for nodes -->
+          <filter id="nn-glow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="blur" />
+            <feComposite in="SourceGraphic" in2="blur" operator="over" />
+          </filter>
+
+          <!-- Stronger glow for active pulses -->
+          <filter id="nn-pulse-glow" x="-100%" y="-100%" width="300%" height="300%">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="6" result="blur" />
+            <feMerge>
+              <feMergeNode in="blur" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+
+          <!-- Gradient for connection lines -->
+          <linearGradient id="nn-conn-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#0ea5e9" stop-opacity="0.15" />
+            <stop offset="50%" stop-color="#0ea5e9" stop-opacity="0.4" />
+            <stop offset="100%" stop-color="#0ea5e9" stop-opacity="0.15" />
+          </linearGradient>
+
+          <!-- Gradient for attention block -->
+          <linearGradient id="nn-attn-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="#0ea5e9" stop-opacity="0.12" />
+            <stop offset="100%" stop-color="#06b6d4" stop-opacity="0.06" />
+          </linearGradient>
+
+          <!-- Gradient for FFN block -->
+          <linearGradient id="nn-ffn-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="#8b5cf6" stop-opacity="0.12" />
+            <stop offset="100%" stop-color="#7c3aed" stop-opacity="0.06" />
+          </linearGradient>
+
+          <!-- Data flow pulse gradient -->
+          <radialGradient id="nn-data-pulse">
+            <stop offset="0%" stop-color="#00d4ff" stop-opacity="1" />
+            <stop offset="60%" stop-color="#0ea5e9" stop-opacity="0.6" />
+            <stop offset="100%" stop-color="#0ea5e9" stop-opacity="0" />
+          </radialGradient>
+
+          <!-- Arrow marker -->
+          <marker id="nn-arrow" viewBox="0 0 10 10" refX="9" refY="5"
+            markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#0ea5e9" opacity="0.5" />
+          </marker>
+        </defs>
+
+        <!-- ===== LAYER 1: INPUT TOKENS ===== -->
+        <g data-nn-layer="input" class="nn-layer" opacity="0">
+          <text x="80" y="530" class="nn-layer-label" text-anchor="middle">Input</text>
+          <text x="80" y="548" class="nn-layer-sublabel" text-anchor="middle">Tokens</text>
+
+          <!-- Token boxes -->
+          <g class="nn-token-group">
+            <rect x="20" y="470" width="50" height="32" rx="4" class="nn-token-box" data-nn-node="input-0" />
+            <text x="45" y="491" class="nn-token-text" text-anchor="middle">The</text>
+          </g>
+          <g class="nn-token-group">
+            <rect x="80" y="470" width="50" height="32" rx="4" class="nn-token-box" data-nn-node="input-1" />
+            <text x="105" y="491" class="nn-token-text" text-anchor="middle">cat</text>
+          </g>
+          <g class="nn-token-group">
+            <rect x="140" y="470" width="50" height="32" rx="4" class="nn-token-box" data-nn-node="input-2" />
+            <text x="165" y="491" class="nn-token-text" text-anchor="middle">sat</text>
+          </g>
+        </g>
+
+        <!-- ===== LAYER 2: EMBEDDING ===== -->
+        <g data-nn-layer="embedding" class="nn-layer" opacity="0">
+          <text x="80" y="418" class="nn-layer-label" text-anchor="middle">Embedding</text>
+
+          <!-- Embedding nodes -->
+          <circle cx="45" cy="430" r="10" class="nn-node nn-node-embed" data-nn-node="embed-0" />
+          <circle cx="105" cy="430" r="10" class="nn-node nn-node-embed" data-nn-node="embed-1" />
+          <circle cx="165" cy="430" r="10" class="nn-node nn-node-embed" data-nn-node="embed-2" />
+
+          <!-- Connections from input to embedding -->
+          <line x1="45" y1="470" x2="45" y2="442" class="nn-connection" data-nn-conn="input-embed" />
+          <line x1="105" y1="470" x2="105" y2="442" class="nn-connection" data-nn-conn="input-embed" />
+          <line x1="165" y1="470" x2="165" y2="442" class="nn-connection" data-nn-conn="input-embed" />
+        </g>
+
+        <!-- ===== TRANSFORMER BLOCK 1 ===== -->
+        <g data-nn-layer="transformer-1" class="nn-layer nn-transformer-block" opacity="0">
+          <!-- Block background -->
+          <rect x="15" y="270" width="310" height="140" rx="8" class="nn-block-bg" />
+          <text x="330" y="310" class="nn-block-label">Transformer</text>
+          <text x="330" y="328" class="nn-block-label">Block 1</text>
+
+          <!-- Self-Attention sub-block -->
+          <rect x="25" y="340" width="290" height="55" rx="6" class="nn-attn-block" />
+          <text x="170" y="374" class="nn-sublayer-label" text-anchor="middle">Self-Attention</text>
+
+          <!-- Attention nodes -->
+          <circle cx="60" cy="367" r="8" class="nn-node nn-node-attn" data-nn-node="attn1-0" />
+          <circle cx="110" cy="367" r="8" class="nn-node nn-node-attn" data-nn-node="attn1-1" />
+          <circle cx="160" cy="367" r="8" class="nn-node nn-node-attn" data-nn-node="attn1-2" />
+
+          <!-- Cross-connections (attention looks at all positions) -->
+          <line x1="60" y1="367" x2="110" y2="367" class="nn-attention-link" />
+          <line x1="110" y1="367" x2="160" y2="367" class="nn-attention-link" />
+          <line x1="60" y1="367" x2="160" y2="367" class="nn-attention-link" />
+
+          <!-- Feed-Forward sub-block -->
+          <rect x="25" y="278" width="290" height="52" rx="6" class="nn-ffn-block" />
+          <text x="170" y="310" class="nn-sublayer-label" text-anchor="middle">Feed-Forward (MLP)</text>
+
+          <!-- FFN nodes -->
+          <circle cx="55" cy="304" r="8" class="nn-node nn-node-ffn" data-nn-node="ffn1-0" />
+          <circle cx="95" cy="304" r="8" class="nn-node nn-node-ffn" data-nn-node="ffn1-1" />
+          <circle cx="135" cy="304" r="8" class="nn-node nn-node-ffn" data-nn-node="ffn1-2" />
+          <circle cx="175" cy="304" r="8" class="nn-node nn-node-ffn" data-nn-node="ffn1-3" />
+
+          <!-- Internal connections: attention -> FFN -->
+          <line x1="60" y1="359" x2="55" y2="312" class="nn-connection nn-internal" />
+          <line x1="60" y1="359" x2="95" y2="312" class="nn-connection nn-internal" />
+          <line x1="110" y1="359" x2="95" y2="312" class="nn-connection nn-internal" />
+          <line x1="110" y1="359" x2="135" y2="312" class="nn-connection nn-internal" />
+          <line x1="160" y1="359" x2="135" y2="312" class="nn-connection nn-internal" />
+          <line x1="160" y1="359" x2="175" y2="312" class="nn-connection nn-internal" />
+
+          <!-- Connections from embedding to attention -->
+          <line x1="45" y1="420" x2="60" y2="375" class="nn-connection" data-nn-conn="embed-attn1" />
+          <line x1="105" y1="420" x2="110" y2="375" class="nn-connection" data-nn-conn="embed-attn1" />
+          <line x1="165" y1="420" x2="160" y2="375" class="nn-connection" data-nn-conn="embed-attn1" />
+        </g>
+
+        <!-- ===== TRANSFORMER BLOCK 2 ===== -->
+        <g data-nn-layer="transformer-2" class="nn-layer nn-transformer-block" opacity="0">
+          <rect x="15" y="120" width="310" height="140" rx="8" class="nn-block-bg" />
+          <text x="330" y="160" class="nn-block-label">Transformer</text>
+          <text x="330" y="178" class="nn-block-label">Block 2</text>
+
+          <!-- Self-Attention sub-block -->
+          <rect x="25" y="190" width="290" height="55" rx="6" class="nn-attn-block" />
+          <text x="170" y="224" class="nn-sublayer-label" text-anchor="middle">Self-Attention</text>
+
+          <circle cx="60" cy="217" r="8" class="nn-node nn-node-attn" data-nn-node="attn2-0" />
+          <circle cx="110" cy="217" r="8" class="nn-node nn-node-attn" data-nn-node="attn2-1" />
+          <circle cx="160" cy="217" r="8" class="nn-node nn-node-attn" data-nn-node="attn2-2" />
+
+          <line x1="60" y1="217" x2="110" y2="217" class="nn-attention-link" />
+          <line x1="110" y1="217" x2="160" y2="217" class="nn-attention-link" />
+          <line x1="60" y1="217" x2="160" y2="217" class="nn-attention-link" />
+
+          <!-- Feed-Forward sub-block -->
+          <rect x="25" y="128" width="290" height="52" rx="6" class="nn-ffn-block" />
+          <text x="170" y="160" class="nn-sublayer-label" text-anchor="middle">Feed-Forward (MLP)</text>
+
+          <circle cx="55" cy="154" r="8" class="nn-node nn-node-ffn" data-nn-node="ffn2-0" />
+          <circle cx="95" cy="154" r="8" class="nn-node nn-node-ffn" data-nn-node="ffn2-1" />
+          <circle cx="135" cy="154" r="8" class="nn-node nn-node-ffn" data-nn-node="ffn2-2" />
+          <circle cx="175" cy="154" r="8" class="nn-node nn-node-ffn" data-nn-node="ffn2-3" />
+
+          <!-- Internal connections: attention -> FFN -->
+          <line x1="60" y1="209" x2="55" y2="162" class="nn-connection nn-internal" />
+          <line x1="60" y1="209" x2="95" y2="162" class="nn-connection nn-internal" />
+          <line x1="110" y1="209" x2="95" y2="162" class="nn-connection nn-internal" />
+          <line x1="110" y1="209" x2="135" y2="162" class="nn-connection nn-internal" />
+          <line x1="160" y1="209" x2="135" y2="162" class="nn-connection nn-internal" />
+          <line x1="160" y1="209" x2="175" y2="162" class="nn-connection nn-internal" />
+
+          <!-- Connections from block 1 FFN to block 2 attention -->
+          <line x1="55" y1="270" x2="60" y2="225" class="nn-connection" data-nn-conn="ffn1-attn2" />
+          <line x1="95" y1="270" x2="110" y2="225" class="nn-connection" data-nn-conn="ffn1-attn2" />
+          <line x1="155" y1="270" x2="160" y2="225" class="nn-connection" data-nn-conn="ffn1-attn2" />
+        </g>
+
+        <!-- ===== Nx label ===== -->
+        <g data-nn-layer="transformer-2" class="nn-layer" opacity="0">
+          <text x="340" y="250" class="nn-nx-label">&times;N</text>
+          <text x="340" y="268" class="nn-nx-sublabel">layers</text>
+        </g>
+
+        <!-- ===== OUTPUT LAYER ===== -->
+        <g data-nn-layer="output" class="nn-layer" opacity="0">
+          <!-- Connections from block 2 to output -->
+          <line x1="55" y1="120" x2="80" y2="85" class="nn-connection" data-nn-conn="ffn2-output" />
+          <line x1="95" y1="120" x2="130" y2="85" class="nn-connection" data-nn-conn="ffn2-output" />
+          <line x1="135" y1="120" x2="180" y2="85" class="nn-connection" data-nn-conn="ffn2-output" />
+          <line x1="175" y1="120" x2="230" y2="85" class="nn-connection" data-nn-conn="ffn2-output" />
+
+          <!-- Output / Softmax -->
+          <rect x="50" y="50" width="210" height="36" rx="6" class="nn-output-block" />
+          <text x="155" y="74" class="nn-sublayer-label nn-output-label" text-anchor="middle">Softmax &rarr; Next Token</text>
+
+          <!-- Output probability bars -->
+          <g class="nn-prob-group" data-nn="probs">
+            <rect x="400" y="30" width="8" height="46" rx="2" class="nn-prob-bar" data-nn-prob="0" opacity="0" />
+            <text x="404" y="88" class="nn-prob-text" text-anchor="middle" opacity="0">on</text>
+
+            <rect x="430" y="55" width="8" height="21" rx="2" class="nn-prob-bar" data-nn-prob="1" opacity="0" />
+            <text x="434" y="88" class="nn-prob-text" text-anchor="middle" opacity="0">by</text>
+
+            <rect x="460" y="62" width="8" height="14" rx="2" class="nn-prob-bar" data-nn-prob="2" opacity="0" />
+            <text x="464" y="88" class="nn-prob-text" text-anchor="middle" opacity="0">in</text>
+
+            <rect x="490" y="66" width="8" height="10" rx="2" class="nn-prob-bar" data-nn-prob="3" opacity="0" />
+            <text x="494" y="88" class="nn-prob-text" text-anchor="middle" opacity="0">at</text>
+
+            <text x="445" y="20" class="nn-prob-heading" text-anchor="middle" opacity="0">Predicted next token</text>
+
+            <!-- Arrow from softmax to probs -->
+            <line x1="260" y1="68" x2="390" y2="68" class="nn-connection nn-output-conn" marker-end="url(#nn-arrow)" opacity="0" />
+          </g>
+        </g>
+
+        <!-- ===== DATA FLOW PULSES ===== -->
+        <g data-nn="pulses" aria-hidden="true">
+          <circle r="5" class="nn-pulse" data-nn-pulse="0" opacity="0" fill="url(#nn-data-pulse)" filter="url(#nn-pulse-glow)" />
+          <circle r="5" class="nn-pulse" data-nn-pulse="1" opacity="0" fill="url(#nn-data-pulse)" filter="url(#nn-pulse-glow)" />
+          <circle r="5" class="nn-pulse" data-nn-pulse="2" opacity="0" fill="url(#nn-data-pulse)" filter="url(#nn-pulse-glow)" />
+        </g>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<style>
+  .nn-section {
+    position: relative;
+    width: 100%;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4rem 1.5rem;
+  }
+
+  .nn-container {
+    max-width: 960px;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2.5rem;
+  }
+
+  .nn-text-content {
+    text-align: center;
+    max-width: 640px;
+  }
+
+  .nn-heading {
+    font-size: clamp(1.6rem, 4vw, 2.4rem);
+    font-weight: 700;
+    color: #e2e8f0;
+    margin: 0 0 1rem;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+  }
+
+  .nn-description {
+    font-size: clamp(0.95rem, 2vw, 1.1rem);
+    color: #94a3b8;
+    line-height: 1.7;
+    margin: 0;
+  }
+
+  .nn-description em {
+    color: #cbd5e1;
+    font-style: italic;
+  }
+
+  /* === Visualization wrapper === */
+  .nn-viz-wrapper {
+    position: relative;
+    width: 100%;
+    max-width: 900px;
+    border-radius: 12px;
+    overflow: hidden;
+    background: rgba(15, 23, 42, 0.4);
+    border: 1px solid rgba(14, 165, 233, 0.1);
+  }
+
+  /* === Black box overlay === */
+  .nn-blackbox-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 10;
+    background: linear-gradient(
+      135deg,
+      rgba(10, 10, 20, 0.97) 0%,
+      rgba(15, 15, 30, 0.95) 50%,
+      rgba(10, 10, 20, 0.97) 100%
+    );
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    backdrop-filter: blur(8px);
+    transition: opacity 0.6s ease;
+  }
+
+  .nn-blackbox-label {
+    font-size: 4rem;
+    font-weight: 800;
+    color: rgba(148, 163, 184, 0.25);
+    user-select: none;
+    letter-spacing: 0.05em;
+  }
+
+  /* === SVG === */
+  .nn-svg {
+    display: block;
+    width: 100%;
+    height: auto;
+    padding: 1rem;
+  }
+
+  /* === Layer labels === */
+  .nn-layer-label {
+    fill: #94a3b8;
+    font-size: 12px;
+    font-weight: 600;
+    font-family: 'Inter', system-ui, sans-serif;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .nn-layer-sublabel {
+    fill: #64748b;
+    font-size: 10px;
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+
+  .nn-block-label {
+    fill: #64748b;
+    font-size: 13px;
+    font-weight: 500;
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+
+  .nn-sublayer-label {
+    fill: #94a3b8;
+    font-size: 11px;
+    font-weight: 500;
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+
+  .nn-output-label {
+    fill: #e2e8f0;
+  }
+
+  .nn-nx-label {
+    fill: #0ea5e9;
+    font-size: 22px;
+    font-weight: 700;
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+
+  .nn-nx-sublabel {
+    fill: #64748b;
+    font-size: 11px;
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+
+  /* === Token boxes === */
+  .nn-token-box {
+    fill: rgba(14, 165, 233, 0.08);
+    stroke: rgba(14, 165, 233, 0.35);
+    stroke-width: 1;
+  }
+
+  .nn-token-text {
+    fill: #38bdf8;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+
+  /* === Nodes === */
+  .nn-node {
+    stroke-width: 1.5;
+    filter: url(#nn-glow);
+  }
+
+  .nn-node-embed {
+    fill: rgba(14, 165, 233, 0.15);
+    stroke: #0ea5e9;
+  }
+
+  .nn-node-attn {
+    fill: rgba(14, 165, 233, 0.2);
+    stroke: #38bdf8;
+  }
+
+  .nn-node-ffn {
+    fill: rgba(139, 92, 246, 0.2);
+    stroke: #8b5cf6;
+  }
+
+  /* === Connections === */
+  .nn-connection {
+    stroke: rgba(14, 165, 233, 0.18);
+    stroke-width: 1;
+  }
+
+  .nn-connection.nn-internal {
+    stroke: rgba(139, 92, 246, 0.15);
+    stroke-width: 0.8;
+  }
+
+  .nn-output-conn {
+    stroke: rgba(14, 165, 233, 0.3);
+    stroke-width: 1;
+  }
+
+  .nn-attention-link {
+    stroke: rgba(56, 189, 248, 0.25);
+    stroke-width: 1.5;
+    stroke-dasharray: 4 3;
+  }
+
+  /* === Block backgrounds === */
+  .nn-block-bg {
+    fill: rgba(14, 165, 233, 0.03);
+    stroke: rgba(14, 165, 233, 0.12);
+    stroke-width: 1;
+    stroke-dasharray: 6 4;
+  }
+
+  .nn-attn-block {
+    fill: url(#nn-attn-grad);
+    stroke: rgba(14, 165, 233, 0.15);
+    stroke-width: 0.8;
+  }
+
+  .nn-ffn-block {
+    fill: url(#nn-ffn-grad);
+    stroke: rgba(139, 92, 246, 0.15);
+    stroke-width: 0.8;
+  }
+
+  /* === Output === */
+  .nn-output-block {
+    fill: rgba(16, 185, 129, 0.08);
+    stroke: rgba(16, 185, 129, 0.3);
+    stroke-width: 1;
+  }
+
+  .nn-prob-bar {
+    fill: #0ea5e9;
+  }
+
+  .nn-prob-bar[data-nn-prob="0"] {
+    fill: #00d4ff;
+  }
+
+  .nn-prob-text {
+    fill: #64748b;
+    font-size: 10px;
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+
+  .nn-prob-heading {
+    fill: #94a3b8;
+    font-size: 11px;
+    font-weight: 600;
+    font-family: 'Inter', system-ui, sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  /* === Pulse animation (CSS fallback for non-GSAP) === */
+  .nn-pulse {
+    will-change: transform, opacity;
+  }
+
+  /* === Reduced motion === */
+  @media (prefers-reduced-motion: reduce) {
+    .nn-pulse {
+      display: none;
+    }
+    .nn-blackbox-overlay {
+      transition: none;
+    }
+  }
+
+  /* === Responsive === */
+  @media (max-width: 640px) {
+    .nn-section {
+      padding: 2rem 1rem;
+    }
+
+    .nn-svg {
+      padding: 0.5rem;
+    }
+
+    .nn-heading {
+      font-size: 1.4rem;
+    }
+
+    .nn-blackbox-label {
+      font-size: 2.5rem;
+    }
+  }
+</style>
+
+<script>
+  /**
+   * NeuralNetworkSVG scroll animation orchestration.
+   * Relies on gsap + ScrollTrigger being registered globally by Layout.astro.
+   *
+   * Animation sequence:
+   * 1. Black box overlay fades out
+   * 2. Layers reveal bottom-to-top (input -> embedding -> block1 -> block2 -> output)
+   * 3. Data flow pulses travel upward through the network
+   * 4. Output probability bars animate in
+   */
+  function initNeuralNetwork() {
+    const gsap = (window as any).gsap;
+    const ScrollTrigger = (window as any).ScrollTrigger;
+    if (!gsap || !ScrollTrigger) return;
+
+    const section = document.getElementById('neural-network-section');
+    if (!section) return;
+
+    const blackbox = section.querySelector('[data-nn="blackbox"]') as HTMLElement;
+    const layers = section.querySelectorAll('.nn-layer');
+    const probBars = section.querySelectorAll('[data-nn-prob]');
+    const probTexts = section.querySelectorAll('.nn-prob-text');
+    const probHeading = section.querySelector('.nn-prob-heading');
+    const outputConn = section.querySelector('.nn-output-conn');
+    const pulses = section.querySelectorAll('.nn-pulse');
+
+    // Create main timeline pinned to the section
+    const tl = gsap.timeline({
+      scrollTrigger: {
+        trigger: section,
+        start: 'top top',
+        end: '+=250%',
+        pin: true,
+        scrub: 1,
+        anticipatePin: 1,
+      }
+    });
+
+    // Phase 1: Fade heading and description in
+    tl.fromTo(
+      section.querySelector('[data-nn="heading"]'),
+      { opacity: 0, y: 20 },
+      { opacity: 1, y: 0, duration: 0.5 },
+      0
+    );
+    tl.fromTo(
+      section.querySelector('[data-nn="desc"]'),
+      { opacity: 0, y: 15 },
+      { opacity: 1, y: 0, duration: 0.5 },
+      0.15
+    );
+
+    // Phase 2: Black box dissolves
+    tl.to(blackbox, {
+      opacity: 0,
+      duration: 0.8,
+      ease: 'power2.inOut',
+      onComplete: () => { blackbox.style.pointerEvents = 'none'; },
+    }, 0.6);
+
+    // Phase 3: Reveal layers bottom to top
+    const layerOrder = ['input', 'embedding', 'transformer-1', 'transformer-2', 'output'];
+    layerOrder.forEach((layerName, i) => {
+      const layerEls = section.querySelectorAll(`[data-nn-layer="${layerName}"]`);
+      tl.to(layerEls, {
+        opacity: 1,
+        duration: 0.5,
+        stagger: 0.05,
+        ease: 'power2.out',
+      }, 1.2 + i * 0.35);
+    });
+
+    // Phase 4: Output probability bars
+    tl.to(outputConn, { opacity: 1, duration: 0.3 }, 3.2);
+    tl.to(probHeading, { opacity: 1, duration: 0.3 }, 3.3);
+    probBars.forEach((bar, i) => {
+      tl.to(bar, {
+        opacity: 1,
+        duration: 0.3,
+        ease: 'power2.out',
+      }, 3.4 + i * 0.1);
+    });
+    probTexts.forEach((txt, i) => {
+      tl.to(txt, {
+        opacity: 1,
+        duration: 0.3,
+      }, 3.5 + i * 0.1);
+    });
+
+    // Phase 5: Data flow pulses
+    // Define a path from bottom to top
+    const pulsePathY = [486, 430, 367, 304, 217, 154, 68];
+    const pulsePathX = [45, 105, 165]; // Three token lanes
+
+    pulses.forEach((pulse, i) => {
+      const xPos = pulsePathX[i] || pulsePathX[0];
+      // Animate pulse traveling upward
+      const pulseTl = gsap.timeline({ repeat: -1, delay: i * 0.6 });
+
+      pulsePathY.forEach((yPos, j) => {
+        if (j === 0) {
+          pulseTl.set(pulse, { attr: { cx: xPos, cy: yPos }, opacity: 0.9 });
+        } else {
+          pulseTl.to(pulse, {
+            attr: { cy: yPos },
+            duration: 0.4,
+            ease: 'power1.inOut',
+          });
+        }
+      });
+      pulseTl.to(pulse, { opacity: 0, duration: 0.2 });
+
+      // Only play pulses after the network is revealed
+      pulseTl.pause();
+      tl.call(() => pulseTl.play(), [], 3.8);
+    });
+  }
+
+  // Initialize when DOM and GSAP are ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+      requestAnimationFrame(initNeuralNetwork);
+    });
+  } else {
+    requestAnimationFrame(initNeuralNetwork);
+  }
+</script>

@@ -1,0 +1,467 @@
+---
+import Layout from "../layouts/Layout.astro";
+import ParticleCanvas from "../components/ParticleCanvas.astro";
+import IcebergSVG from "../components/IcebergSVG.astro";
+import TokenViz from "../components/TokenViz.astro";
+import AttentionViz from "../components/AttentionViz.astro";
+import EmbeddingViz from "../components/EmbeddingViz.astro";
+import NeuralNetworkSVG from "../components/NeuralNetworkSVG.astro";
+import DiffusionViz from "../components/DiffusionViz.astro";
+---
+
+<Layout title="The AI Iceberg — Understanding How LLMs Work">
+  <ParticleCanvas />
+
+  <!-- Progress bar -->
+  <div class="progress-bar" id="progress-bar" aria-hidden="true"></div>
+
+  <!-- ============================================ -->
+  <!-- HERO                                         -->
+  <!-- ============================================ -->
+  <section class="hero" id="hero" aria-label="Introduction">
+    <p class="label" id="hero-label">Leon Furze's AI Iceberg</p>
+    <h1 id="hero-title">Understanding How<br />AI Really Works</h1>
+    <p class="subtitle" id="hero-subtitle">
+      Scroll down to dive beneath the surface of ChatGPT, exploring the hidden
+      layers of large language models — from the applications you see to the
+      vast ocean of training data you don't.
+    </p>
+    <div class="scroll-cue" id="scroll-cue">
+      <span>Scroll to explore</span>
+      <div class="arrow" aria-hidden="true"></div>
+    </div>
+  </section>
+
+  <!-- ============================================ -->
+  <!-- CHAPTER: THE ICEBERG OVERVIEW                -->
+  <!-- ============================================ -->
+  <section id="main-content" aria-label="The AI Iceberg overview">
+    <div class="chapter-divider" id="ch-iceberg">
+      <span class="chapter-number">The Big Picture</span>
+      <h2 id="ch-iceberg-title">The AI Iceberg</h2>
+      <p id="ch-iceberg-desc">
+        Most people interact with AI through polished applications like ChatGPT.
+        But like an iceberg, what you see is only a tiny fraction of what's really
+        there. The vast majority — the training data, the model architecture, the
+        hidden processes — lies beneath the surface.
+      </p>
+    </div>
+
+    <!-- Sticky iceberg with scrolling text annotations -->
+    <div class="scroll-container" id="iceberg-scroll">
+      <div class="sticky-graphic" id="iceberg-sticky">
+        <IcebergSVG />
+      </div>
+      <div class="scroll-text">
+        <div class="step" data-step="snowman" id="step-snowman">
+          <h3>Layer 3: The Application</h3>
+          <p>
+            Picture a carefully sculpted snowman sitting on top of the iceberg.
+            This represents an application like ChatGPT — built on top of the
+            general LLM, just as ChatGPT is a version of the GPT model
+            fine-tuned specifically for conversational tasks.
+          </p>
+          <p>
+            The chatbot layer includes <strong>system messages</strong> (rules
+            governing every interaction) and <strong>RLHF</strong>
+            (reinforcement learning from human feedback), where human reviewers
+            judge outputs as helpful, harmful, correct, or incorrect — shaping
+            how the model responds.
+          </p>
+        </div>
+
+        <div class="step" data-step="llm" id="step-llm">
+          <h3>Layer 2: The LLM</h3>
+          <p>
+            The visible iceberg above the waterline is the Large Language Model
+            itself — the result of the training process fuelled by the vast
+            dataset beneath. This is where three key technical processes happen.
+          </p>
+          <p>
+            <strong>Tokenization</strong> breaks text into machine-readable
+            pieces. <strong>Weighting</strong> assigns probability values to
+            connections between tokens. And the
+            <strong>transformer architecture</strong> with its
+            <strong>attention mechanism</strong> — introduced in 2017 by Google
+            researchers — allows the model to consider relationships across
+            entire passages of text.
+          </p>
+          <p>
+            LLMs are often called "black boxes" because their internal
+            connections are so massively complex that no human or team of humans
+            could possibly unravel everything going on inside.
+          </p>
+        </div>
+
+        <div class="step" data-step="dataset" id="step-dataset">
+          <h3>Layer 1: The Dataset</h3>
+          <p>
+            The bulk of the iceberg — hidden underwater — represents the vast
+            dataset on which the LLM is trained. GPT-4 trained on roughly
+            <strong>13 trillion tokens</strong> — about 1,600 times the
+            population of Earth.
+          </p>
+          <p>
+            Known data sources include Common Crawl, The Pile, Wikipedia,
+            GitHub, and social media. Much of the data remains proprietary.
+            This layer carries plenty of side effects, including the kind of
+            bias and discrimination central to AI ethics discussions.
+          </p>
+        </div>
+
+        <div class="step" data-step="ocean" id="step-ocean">
+          <h3>The Ocean &amp; The Sharks</h3>
+          <p>
+            The ocean surrounding the iceberg represents the internet at large —
+            the vast environment from which the dataset is sourced.
+          </p>
+          <p>
+            And the sharks? They symbolize threats lurking in the data:
+            <strong>misinformation</strong>, <strong>bias</strong>,
+            <strong>toxic content</strong>, and <strong>data privacy
+            issues</strong> that can influence the dataset and, subsequently,
+            the behaviour of the LLM.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================ -->
+  <!-- CHAPTER: BENEATH THE SURFACE                 -->
+  <!-- ============================================ -->
+  <section aria-label="How LLMs work — deep dive">
+    <div class="chapter-divider" id="ch-beneath">
+      <span class="chapter-number">Beneath the Surface</span>
+      <h2>How It Actually Works</h2>
+      <p>
+        Let's open the black box. The following sections explore the key
+        processes that make large language models tick — from breaking text
+        into tokens to predicting the next word.
+      </p>
+    </div>
+
+    <!-- NEXT-TOKEN PREDICTION intro -->
+    <div class="full-section" id="next-token-section">
+      <span class="label">The Core Insight</span>
+      <h2 id="next-token-title">The World's Most Sophisticated Autocomplete</h2>
+      <p id="next-token-p1">
+        Here's the single most important thing to understand about how LLMs work:
+        they build text <strong>one word at a time</strong>, each time predicting
+        the most likely next token based on everything that came before.
+      </p>
+      <p id="next-token-p2">
+        Think of the autocomplete on your phone. You type "I'm on my" and it
+        suggests "way." An LLM does the same thing — but with vastly more
+        context, vastly more data, and vastly more sophistication. It doesn't
+        "understand" your message. It predicts what comes next.
+      </p>
+      <p id="next-token-p3" style="color: var(--text-muted); font-style: italic; font-size: 0.95rem;">
+        As Luis Serrano writes: "The first time I found out that transformers
+        build text one word at a time, I couldn't believe it."
+      </p>
+    </div>
+
+    <!-- TOKENIZATION -->
+    <div class="chapter-divider" id="ch-tokens">
+      <span class="chapter-number">Process 1</span>
+      <h2>Tokenization</h2>
+      <p>
+        Before an LLM can process language, text must be broken into small
+        pieces called tokens — like Scrabble tiles the model can work with.
+      </p>
+    </div>
+
+    <TokenViz />
+
+    <!-- EMBEDDINGS -->
+    <div class="chapter-divider" id="ch-embeddings">
+      <span class="chapter-number">Process 2</span>
+      <h2>Embeddings</h2>
+      <p>
+        Each token becomes a numerical vector — essentially GPS coordinates in
+        "meaning space," where similar concepts naturally cluster together.
+        These positions are learned during training, not hand-coded.
+      </p>
+    </div>
+
+    <EmbeddingViz />
+
+    <!-- ATTENTION -->
+    <div class="chapter-divider" id="ch-attention">
+      <span class="chapter-number">Process 3</span>
+      <h2>Attention</h2>
+      <p>
+        The breakthrough that made modern AI possible. The attention mechanism
+        lets each word look at every other word to understand context — resolving
+        ambiguity in ways previous architectures couldn't.
+      </p>
+    </div>
+
+    <AttentionViz />
+
+    <!-- NEURAL NETWORK / TRANSFORMER -->
+    <div class="chapter-divider" id="ch-transformer">
+      <span class="chapter-number">Putting It Together</span>
+      <h2>The Transformer Architecture</h2>
+      <p>
+        Tokenization, embeddings, and attention combine inside a
+        transformer — the architecture introduced in Google's landmark 2017
+        paper "Attention Is All You Need" that powers every modern LLM.
+      </p>
+    </div>
+
+    <NeuralNetworkSVG />
+  </section>
+
+  <!-- ============================================ -->
+  <!-- CHAPTER: BEYOND TEXT                         -->
+  <!-- ============================================ -->
+  <section aria-label="Beyond text — image generation">
+    <div class="chapter-divider" id="ch-diffusion">
+      <span class="chapter-number">Beyond Text</span>
+      <h2>How AI Generates Images</h2>
+      <p>
+        Image generators like DALL-E, Stable Diffusion, and Midjourney use a
+        different technique called diffusion. Imagine ink diffusing in a glass
+        of water until it's uniformly mixed — then learning to run the process
+        in reverse, starting from pure noise and gradually "un-mixing" it into
+        a coherent image, guided by a text prompt.
+      </p>
+    </div>
+
+    <DiffusionViz />
+  </section>
+
+  <!-- ============================================ -->
+  <!-- CHAPTER: THE BIGGER PICTURE                  -->
+  <!-- ============================================ -->
+  <section class="full-section" id="misconceptions-section" aria-label="Common misconceptions">
+    <span class="label">A Critical Reminder</span>
+    <h2 id="misconceptions-title">It Doesn't Think. It Predicts.</h2>
+    <p id="misconceptions-p1">
+      The terminology we use for AI — "learns," "thinks," "understands" — is
+      what researchers call <strong>wishful mnemonics</strong>. These words
+      describe what the system <em>appears</em> to do, not what it actually
+      does. An LLM is a sophisticated statistical prediction engine, not a mind.
+    </p>
+    <p id="misconceptions-p2">
+      That's why Leon Furze's iceberg metaphor is deliberately chosen: "I'm
+      deliberately avoiding any kind of analogy that represents the AI as
+      magical, mythical, human, or godlike — we've seen enough of them." The
+      iceberg emphasizes hidden infrastructure, not hidden intelligence.
+    </p>
+    <p id="misconceptions-p3" style="font-size: 0.95rem; color: var(--text-muted);">
+      Understanding what's beneath the surface — the data, the architecture,
+      the biases — is the first step toward using these tools critically and
+      responsibly.
+    </p>
+  </section>
+
+  <!-- ============================================ -->
+  <!-- FOOTER                                       -->
+  <!-- ============================================ -->
+  <footer class="footer">
+    <p>
+      Based on the <strong>AI Iceberg</strong> model by
+      <a href="https://leonfurze.com/2023/05/18/the-ai-iceberg-understanding-chatgpt/" target="_blank" rel="noopener">Leon Furze</a>,
+      from <em>Practical AI Strategies</em> (Amba Press, 2024).
+    </p>
+    <p>
+      Iceberg image freely usable in presentations with credit to
+      <a href="https://leonfurze.com" target="_blank" rel="noopener">leonfurze.com</a>.
+    </p>
+  </footer>
+</Layout>
+
+<script>
+  /**
+   * Main page orchestration — GSAP ScrollTrigger setup for all sections.
+   * This script runs after Layout.astro registers gsap + ScrollTrigger globally.
+   */
+  function initScrollAnimations() {
+    const gsap = (window as any).gsap;
+    const ScrollTrigger = (window as any).ScrollTrigger;
+
+    if (!gsap || !ScrollTrigger) return;
+
+    const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    // --- Progress bar ---
+    gsap.to("#progress-bar", {
+      width: "100%",
+      ease: "none",
+      scrollTrigger: {
+        trigger: "body",
+        start: "top top",
+        end: "bottom bottom",
+        scrub: 0.3,
+      },
+    });
+
+    // --- Hero animations ---
+    if (!prefersReduced) {
+      gsap.from("#hero-label", { opacity: 0, y: 20, duration: 0.8, delay: 0.2 });
+      gsap.from("#hero-title", { opacity: 0, y: 30, duration: 1, delay: 0.4 });
+      gsap.from("#hero-subtitle", { opacity: 0, y: 20, duration: 0.8, delay: 0.7 });
+      gsap.from("#scroll-cue", { opacity: 0, duration: 0.8, delay: 1.2 });
+
+      // Fade out hero on scroll
+      gsap.to("#hero", {
+        opacity: 0,
+        y: -50,
+        scrollTrigger: {
+          trigger: "#hero",
+          start: "center center",
+          end: "bottom top",
+          scrub: true,
+        },
+      });
+    }
+
+    // --- Chapter dividers fade in ---
+    gsap.utils.toArray(".chapter-divider").forEach((el: any) => {
+      if (prefersReduced) return;
+      gsap.from(el.querySelector(".chapter-number"), {
+        opacity: 0, y: 15, duration: 0.5,
+        scrollTrigger: { trigger: el, start: "top 80%", toggleActions: "play none none reverse" },
+      });
+      gsap.from(el.querySelector("h2"), {
+        opacity: 0, y: 20, duration: 0.6,
+        scrollTrigger: { trigger: el, start: "top 78%", toggleActions: "play none none reverse" },
+      });
+      const desc = el.querySelector("p");
+      if (desc) {
+        gsap.from(desc, {
+          opacity: 0, y: 15, duration: 0.6,
+          scrollTrigger: { trigger: el, start: "top 75%", toggleActions: "play none none reverse" },
+        });
+      }
+    });
+
+    // --- Next-token prediction section ---
+    if (!prefersReduced) {
+      ["#next-token-title", "#next-token-p1", "#next-token-p2", "#next-token-p3"].forEach((sel, i) => {
+        gsap.from(sel, {
+          opacity: 0, y: 20, duration: 0.6,
+          scrollTrigger: {
+            trigger: "#next-token-section",
+            start: `top ${80 - i * 5}%`,
+            toggleActions: "play none none reverse",
+          },
+        });
+      });
+    }
+
+    // --- Iceberg scroll section: sticky graphic + step triggers ---
+    const icebergSteps = gsap.utils.toArray("#iceberg-scroll .step");
+
+    icebergSteps.forEach((step: any) => {
+      ScrollTrigger.create({
+        trigger: step,
+        start: "top 60%",
+        end: "bottom 40%",
+        onEnter: () => activateIcebergStep(step.dataset.step, step),
+        onEnterBack: () => activateIcebergStep(step.dataset.step, step),
+        onLeave: () => step.classList.remove("is-active"),
+        onLeaveBack: () => step.classList.remove("is-active"),
+      });
+    });
+
+    function activateIcebergStep(stepName: string, stepEl: Element) {
+      // Deactivate all steps, activate current
+      icebergSteps.forEach((s: any) => s.classList.remove("is-active"));
+      stepEl.classList.add("is-active");
+
+      // Animate iceberg labels based on step
+      const duration = prefersReduced ? 0 : 0.5;
+      const ease = "power2.out";
+
+      // Reset all labels
+      gsap.to("#label-applications, #label-llm, #label-dataset, #label-ocean, #shark-labels", {
+        opacity: 0, duration: duration * 0.5, ease,
+      });
+
+      switch (stepName) {
+        case "snowman":
+          gsap.to("#label-applications", { opacity: 1, duration, ease });
+          gsap.to("#iceberg-snowman", { filter: "drop-shadow(0 0 8px rgba(56,189,248,0.3))", duration });
+          break;
+        case "llm":
+          gsap.to("#label-llm", { opacity: 1, duration, ease });
+          gsap.to("#iceberg-snowman", { filter: "none", duration: duration * 0.5 });
+          break;
+        case "dataset":
+          gsap.to("#label-dataset", { opacity: 1, duration, ease });
+          break;
+        case "ocean":
+          gsap.to("#label-ocean", { opacity: 1, duration, ease });
+          gsap.to("#shark-labels", { opacity: 1, duration, ease, delay: 0.2 });
+          gsap.to(".shark-group", { opacity: 0.6, duration, ease });
+          break;
+      }
+    }
+
+    // --- Misconceptions section ---
+    if (!prefersReduced) {
+      ["#misconceptions-title", "#misconceptions-p1", "#misconceptions-p2", "#misconceptions-p3"].forEach((sel, i) => {
+        gsap.from(sel, {
+          opacity: 0, y: 20, duration: 0.6,
+          scrollTrigger: {
+            trigger: "#misconceptions-section",
+            start: `top ${80 - i * 5}%`,
+            toggleActions: "play none none reverse",
+          },
+        });
+      });
+    }
+
+    // --- Full section label animations ---
+    gsap.utils.toArray(".full-section .label").forEach((label: any) => {
+      if (prefersReduced) return;
+      gsap.from(label, {
+        opacity: 0, y: 10, duration: 0.5,
+        scrollTrigger: {
+          trigger: label,
+          start: "top 85%",
+          toggleActions: "play none none reverse",
+        },
+      });
+    });
+  }
+
+  // Initialize when DOM is ready
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", () => {
+      requestAnimationFrame(initScrollAnimations);
+    });
+  } else {
+    requestAnimationFrame(initScrollAnimations);
+  }
+</script>
+
+<style>
+  /* Page-specific styles that supplement global.css */
+  #misconceptions-section {
+    background: linear-gradient(
+      180deg,
+      var(--bg-primary) 0%,
+      var(--bg-secondary) 50%,
+      var(--bg-primary) 100%
+    );
+  }
+
+  #next-token-section strong {
+    color: var(--accent-cyan);
+  }
+
+  /* Ensure iceberg scroll container has enough height for scrolling */
+  #iceberg-scroll {
+    min-height: 300vh;
+  }
+
+  #iceberg-scroll .scroll-text {
+    padding-top: 20vh;
+    padding-bottom: 20vh;
+  }
+</style>

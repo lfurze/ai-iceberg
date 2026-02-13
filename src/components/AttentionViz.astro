@@ -1,0 +1,607 @@
+---
+/**
+ * AttentionViz.astro — Self-attention mechanism visualization
+ *
+ * Two demonstrations:
+ * 1. The classic pronoun resolution: "The animal didn't cross the street because it was too tired"
+ *    — shows how "it" attends most strongly to "animal"
+ * 2. The "mole" disambiguation: same word, different attention patterns in different contexts
+ *
+ * Uses inline SVG for attention arcs between words.
+ */
+
+const sentence = ["The", "animal", "didn't", "cross", "the", "street", "because", "it", "was", "too", "tired"];
+
+// Attention weights from "it" (index 7) to all other words
+// These reflect a plausible self-attention distribution where "it" attends strongly to "animal"
+const attentionFromIt = [
+  { target: 0,  weight: 0.04 },  // The
+  { target: 1,  weight: 0.72 },  // animal  <-- strongest
+  { target: 2,  weight: 0.03 },  // didn't
+  { target: 3,  weight: 0.02 },  // cross
+  { target: 4,  weight: 0.02 },  // the
+  { target: 5,  weight: 0.05 },  // street
+  { target: 6,  weight: 0.04 },  // because
+  { target: 8,  weight: 0.03 },  // was
+  { target: 9,  weight: 0.02 },  // too
+  { target: 10, weight: 0.03 },  // tired
+];
+
+const moleContexts = [
+  {
+    id: "mole-animal",
+    sentence: ["The", "American", "shrew", "mole", "burrows", "underground"],
+    focus: 3, // "mole"
+    attentions: [
+      { target: 1, weight: 0.30 }, // American
+      { target: 2, weight: 0.45 }, // shrew
+      { target: 4, weight: 0.12 }, // burrows
+      { target: 5, weight: 0.08 }, // underground
+      { target: 0, weight: 0.05 }, // The
+    ],
+    label: "Animal",
+    color: "#34d399",
+  },
+  {
+    id: "mole-chemistry",
+    sentence: ["One", "mole", "of", "CO\u2082", "weighs", "44", "grams"],
+    focus: 1, // "mole"
+    attentions: [
+      { target: 0, weight: 0.25 }, // One
+      { target: 3, weight: 0.40 }, // CO₂
+      { target: 5, weight: 0.15 }, // 44
+      { target: 6, weight: 0.10 }, // grams
+      { target: 2, weight: 0.05 }, // of
+      { target: 4, weight: 0.05 }, // weighs
+    ],
+    label: "Chemistry",
+    color: "#fbbf24",
+  },
+  {
+    id: "mole-medical",
+    sentence: ["Biopsy", "of", "the", "skin", "mole", "was", "benign"],
+    focus: 4, // "mole"
+    attentions: [
+      { target: 0, weight: 0.35 }, // Biopsy
+      { target: 3, weight: 0.30 }, // skin
+      { target: 6, weight: 0.18 }, // benign
+      { target: 5, weight: 0.07 }, // was
+      { target: 1, weight: 0.05 }, // of
+      { target: 2, weight: 0.05 }, // the
+    ],
+    label: "Medical",
+    color: "#fb7185",
+  },
+];
+---
+
+<section class="attention-viz" id="attention-viz-section" aria-label="Attention mechanism visualization">
+  <div class="attention-viz__inner">
+
+    <!-- Part 1: Pronoun resolution -->
+    <div class="attention-viz__block" id="attention-pronoun-block" data-attention-block="pronoun">
+      <h3 class="attention-viz__heading">Self-Attention: Resolving &ldquo;it&rdquo;</h3>
+      <p class="attention-viz__desc">
+        When the model encounters the word <strong>&ldquo;it&rdquo;</strong>, attention lets it look at
+        every other word and decide which ones are relevant. The thicker the line, the more attention
+        &ldquo;it&rdquo; pays to that word.
+      </p>
+
+      <div class="attention-viz__sentence-wrap">
+        <svg
+          class="attention-viz__arcs"
+          id="attention-arcs-svg"
+          viewBox="0 0 880 160"
+          preserveAspectRatio="xMidYMid meet"
+          aria-hidden="true"
+        >
+          <!-- Arcs are drawn by the script -->
+        </svg>
+        <div class="attention-viz__words" id="attention-words" role="list" aria-label="Sentence words with attention weights">
+          {sentence.map((word, i) => (
+            <span
+              class={`attention-viz__word ${i === 7 ? 'attention-viz__word--source' : ''} ${i === 1 ? 'attention-viz__word--target' : ''}`}
+              data-word-index={i}
+              role="listitem"
+              aria-label={`${word}${i === 7 ? ' (source of attention query)' : ''}${i === 1 ? ' (strongest attention target)' : ''}`}
+            >
+              {word}
+            </span>
+          ))}
+        </div>
+      </div>
+    </div>
+
+    <!-- QKV explanation -->
+    <div class="attention-viz__qkv" id="attention-qkv" data-attention-qkv>
+      <h4 class="attention-viz__qkv-title">Query, Key, Value &mdash; A Library Analogy</h4>
+      <div class="attention-viz__qkv-cards">
+        <div class="attention-viz__qkv-card" data-qkv="query">
+          <div class="attention-viz__qkv-icon">Q</div>
+          <div class="attention-viz__qkv-label">Query</div>
+          <p>&ldquo;What am I looking for?&rdquo;<br/>The word &ldquo;it&rdquo; asks: <em>&ldquo;What noun do I refer to?&rdquo;</em></p>
+        </div>
+        <div class="attention-viz__qkv-card" data-qkv="key">
+          <div class="attention-viz__qkv-icon">K</div>
+          <div class="attention-viz__qkv-label">Key</div>
+          <p>&ldquo;What do I contain?&rdquo;<br/>Each word advertises its identity, like a library catalogue entry.</p>
+        </div>
+        <div class="attention-viz__qkv-card" data-qkv="value">
+          <div class="attention-viz__qkv-icon">V</div>
+          <div class="attention-viz__qkv-label">Value</div>
+          <p>&ldquo;Here&rsquo;s my actual information.&rdquo;<br/>The content retrieved once Query matches a Key.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Part 2: Mole disambiguation -->
+    <div class="attention-viz__block" id="attention-mole-block" data-attention-block="mole">
+      <h3 class="attention-viz__heading">Contextual Attention: The &ldquo;Mole&rdquo; Problem</h3>
+      <p class="attention-viz__desc">
+        The word <strong>&ldquo;mole&rdquo;</strong> means completely different things depending on context.
+        Attention lets the model figure out which meaning is intended by attending to surrounding words.
+      </p>
+
+      <div class="attention-viz__mole-grid">
+        {moleContexts.map((ctx) => (
+          <div class="attention-viz__mole-card" id={ctx.id} data-mole-card={ctx.label.toLowerCase()}>
+            <span class="attention-viz__mole-label" style={`color: ${ctx.color}`}>{ctx.label}</span>
+            <div class="attention-viz__mole-sentence-wrap">
+              <svg
+                class="attention-viz__mole-arcs"
+                data-mole-arcs={ctx.id}
+                viewBox="0 0 560 100"
+                preserveAspectRatio="xMidYMid meet"
+                aria-hidden="true"
+              >
+                <!-- Arcs drawn by script -->
+              </svg>
+              <div class="attention-viz__mole-words" data-mole-words={ctx.id}>
+                {ctx.sentence.map((word, i) => (
+                  <span
+                    class={`attention-viz__mole-word ${i === ctx.focus ? 'attention-viz__mole-word--focus' : ''}`}
+                    data-mole-word-index={i}
+                    data-mole-context={ctx.id}
+                    style={i === ctx.focus ? `color: ${ctx.color}` : ''}
+                  >
+                    {word}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<style>
+  .attention-viz {
+    position: relative;
+    width: 100%;
+    padding: 4rem 1.5rem;
+  }
+
+  .attention-viz__inner {
+    max-width: 960px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 4rem;
+  }
+
+  .attention-viz__block {
+    opacity: 0;
+  }
+
+  .attention-viz__heading {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.95);
+    margin-bottom: 0.75rem;
+  }
+
+  .attention-viz__desc {
+    font-size: 0.95rem;
+    line-height: 1.7;
+    color: rgba(255, 255, 255, 0.55);
+    max-width: 640px;
+    margin-bottom: 2rem;
+  }
+
+  .attention-viz__desc strong {
+    color: #38bdf8;
+    font-weight: 600;
+  }
+
+  /* ---- Pronoun resolution sentence ---- */
+  .attention-viz__sentence-wrap {
+    position: relative;
+    padding-top: 0;
+  }
+
+  .attention-viz__arcs {
+    width: 100%;
+    height: auto;
+    display: block;
+  }
+
+  .attention-viz__words {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0;
+    justify-content: center;
+    padding: 0 0.5rem;
+  }
+
+  .attention-viz__word {
+    font-size: 1rem;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.6);
+    padding: 0.35rem 0.55rem;
+    border-radius: 4px;
+    transition: color 0.3s ease, background 0.3s ease;
+    white-space: nowrap;
+  }
+
+  .attention-viz__word--source {
+    color: #00d4ff;
+    font-weight: 700;
+    background: rgba(0, 212, 255, 0.1);
+    border: 1px solid rgba(0, 212, 255, 0.3);
+  }
+
+  .attention-viz__word--target {
+    color: #fbbf24;
+    font-weight: 700;
+    background: rgba(251, 191, 36, 0.1);
+    border: 1px solid rgba(251, 191, 36, 0.3);
+  }
+
+  /* ---- QKV cards ---- */
+  .attention-viz__qkv {
+    opacity: 0;
+  }
+
+  .attention-viz__qkv-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.85);
+    margin-bottom: 1.25rem;
+  }
+
+  .attention-viz__qkv-cards {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+  }
+
+  .attention-viz__qkv-card {
+    padding: 1.25rem;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 10px;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  }
+
+  .attention-viz__qkv-card:hover {
+    border-color: rgba(56, 189, 248, 0.3);
+    box-shadow: 0 0 20px rgba(56, 189, 248, 0.08);
+  }
+
+  .attention-viz__qkv-icon {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #0a0a0f;
+    background: #38bdf8;
+    border-radius: 6px;
+    margin-bottom: 0.75rem;
+  }
+
+  .attention-viz__qkv-card[data-qkv="key"] .attention-viz__qkv-icon {
+    background: #a78bfa;
+  }
+
+  .attention-viz__qkv-card[data-qkv="value"] .attention-viz__qkv-icon {
+    background: #34d399;
+  }
+
+  .attention-viz__qkv-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.8);
+    margin-bottom: 0.5rem;
+  }
+
+  .attention-viz__qkv-card p {
+    font-size: 0.85rem;
+    line-height: 1.6;
+    color: rgba(255, 255, 255, 0.5);
+    margin: 0;
+  }
+
+  .attention-viz__qkv-card em {
+    color: rgba(255, 255, 255, 0.7);
+  }
+
+  /* ---- Mole disambiguation ---- */
+  .attention-viz__mole-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.25rem;
+  }
+
+  .attention-viz__mole-card {
+    padding: 1.25rem;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 10px;
+    opacity: 0;
+  }
+
+  .attention-viz__mole-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 0.75rem;
+    display: block;
+  }
+
+  .attention-viz__mole-sentence-wrap {
+    position: relative;
+  }
+
+  .attention-viz__mole-arcs {
+    width: 100%;
+    height: auto;
+    display: block;
+  }
+
+  .attention-viz__mole-words {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0;
+    justify-content: center;
+  }
+
+  .attention-viz__mole-word {
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.5);
+    padding: 0.2rem 0.35rem;
+    white-space: nowrap;
+  }
+
+  .attention-viz__mole-word--focus {
+    font-weight: 700;
+  }
+
+  /* ---- Responsive ---- */
+  @media (max-width: 768px) {
+    .attention-viz {
+      padding: 2.5rem 1rem;
+    }
+
+    .attention-viz__qkv-cards {
+      grid-template-columns: 1fr;
+    }
+
+    .attention-viz__mole-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .attention-viz__word {
+      font-size: 0.85rem;
+      padding: 0.25rem 0.4rem;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .attention-viz__qkv-card {
+      transition: none;
+    }
+    .attention-viz__word {
+      transition: none;
+    }
+  }
+</style>
+
+<script define:vars={{ sentence, attentionFromIt, moleContexts }}>
+  /**
+   * AttentionViz — draws SVG arcs for attention weights.
+   *
+   * GSAP targets:
+   *   - [data-attention-block="pronoun"] : pronoun resolution block (opacity)
+   *   - .attention-viz__arcs path        : individual arc paths (strokeDashoffset animation)
+   *   - [data-attention-qkv]             : QKV explanation block (opacity)
+   *   - [data-qkv="query|key|value"]     : individual QKV cards (opacity, y)
+   *   - [data-attention-block="mole"]    : mole section block (opacity)
+   *   - [data-mole-card]                 : individual mole cards (opacity, y)
+   */
+
+  function drawArc(svg, x1, x2, weight, color, maxHeight) {
+    const midX = (x1 + x2) / 2;
+    const height = Math.abs(x2 - x1) * 0.4 * Math.min(weight * 2, 1);
+    const controlY = Math.max(maxHeight - height - 20, 10);
+
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    const d = `M ${x1} ${maxHeight - 10} Q ${midX} ${controlY} ${x2} ${maxHeight - 10}`;
+    path.setAttribute('d', d);
+    path.setAttribute('fill', 'none');
+    path.setAttribute('stroke', color);
+    path.setAttribute('stroke-width', String(Math.max(weight * 5, 0.5)));
+    path.setAttribute('stroke-opacity', String(Math.max(weight * 0.9, 0.08)));
+    path.setAttribute('stroke-linecap', 'round');
+
+    // Set up for dash animation
+    const length = path.getTotalLength ? path.getTotalLength() : 300;
+    path.style.strokeDasharray = String(length);
+    path.style.strokeDashoffset = String(length);
+
+    path.setAttribute('data-attention-arc', '');
+    path.setAttribute('aria-hidden', 'true');
+
+    svg.appendChild(path);
+    return path;
+  }
+
+  function initAttentionViz() {
+    const gsapLib = (window as any).gsap;
+    const ScrollTrigger = (window as any).ScrollTrigger;
+
+    // ---- Draw pronoun resolution arcs ----
+    const arcsSvg = document.getElementById('attention-arcs-svg');
+    const wordsContainer = document.getElementById('attention-words');
+
+    if (arcsSvg && wordsContainer) {
+      const words = wordsContainer.querySelectorAll('.attention-viz__word');
+      const wordCount = words.length;
+
+      // Calculate positions based on even spacing in the SVG viewBox (880 wide)
+      const svgWidth = 880;
+      const svgHeight = 160;
+      const padding = 40;
+      const spacing = (svgWidth - 2 * padding) / (wordCount - 1);
+
+      const sourceIndex = 7; // "it"
+      const sourceX = padding + sourceIndex * spacing;
+
+      attentionFromIt.forEach((att) => {
+        const targetX = padding + att.target * spacing;
+        const color = att.weight > 0.5 ? '#fbbf24' : '#38bdf8';
+        drawArc(arcsSvg, sourceX, targetX, att.weight, color, svgHeight);
+      });
+    }
+
+    // ---- Draw mole arcs ----
+    moleContexts.forEach((ctx) => {
+      const moleSvg = document.querySelector(`[data-mole-arcs="${ctx.id}"]`);
+      if (!moleSvg) return;
+
+      const moleWordCount = ctx.sentence.length;
+      const svgWidth = 560;
+      const svgHeight = 100;
+      const padding = 30;
+      const spacing = (svgWidth - 2 * padding) / (moleWordCount - 1);
+      const focusX = padding + ctx.focus * spacing;
+
+      ctx.attentions.forEach((att) => {
+        const targetX = padding + att.target * spacing;
+        drawArc(moleSvg, focusX, targetX, att.weight, ctx.color, svgHeight);
+      });
+    });
+
+    // ---- GSAP animations ----
+    if (!gsapLib || !ScrollTrigger) {
+      // Fallback: show everything
+      document.querySelectorAll('.attention-viz__block, .attention-viz__qkv, .attention-viz__mole-card').forEach((el) => {
+        (el as HTMLElement).style.opacity = '1';
+      });
+      document.querySelectorAll('[data-attention-arc]').forEach((path) => {
+        (path as SVGPathElement).style.strokeDashoffset = '0';
+      });
+      return;
+    }
+
+    const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const section = document.getElementById('attention-viz-section');
+    if (!section) return;
+
+    // Pronoun block reveal
+    const pronounBlock = section.querySelector('[data-attention-block="pronoun"]');
+    const pronounArcs = section.querySelectorAll('#attention-arcs-svg [data-attention-arc]');
+
+    const tl1 = gsapLib.timeline({
+      scrollTrigger: {
+        trigger: pronounBlock,
+        start: 'top 75%',
+        toggleActions: 'play none none reverse',
+      },
+    });
+
+    tl1.to(pronounBlock, { opacity: 1, duration: prefersReduced ? 0.2 : 0.5 });
+
+    if (!prefersReduced) {
+      tl1.to(pronounArcs, {
+        strokeDashoffset: 0,
+        duration: 0.6,
+        stagger: 0.05,
+        ease: 'power2.inOut',
+      }, '-=0.2');
+    } else {
+      tl1.to(pronounArcs, { strokeDashoffset: 0, duration: 0.1, stagger: 0 }, '<');
+    }
+
+    // QKV cards
+    const qkvBlock = section.querySelector('[data-attention-qkv]');
+    const qkvCards = section.querySelectorAll('[data-qkv]');
+
+    const tl2 = gsapLib.timeline({
+      scrollTrigger: {
+        trigger: qkvBlock,
+        start: 'top 78%',
+        toggleActions: 'play none none reverse',
+      },
+    });
+
+    if (!prefersReduced) {
+      gsapLib.set(qkvCards, { y: 16 });
+    }
+
+    tl2.to(qkvBlock, { opacity: 1, duration: prefersReduced ? 0.2 : 0.4 })
+      .to(qkvCards, {
+        opacity: 1,
+        y: 0,
+        duration: prefersReduced ? 0.1 : 0.4,
+        stagger: prefersReduced ? 0 : 0.12,
+        ease: 'power2.out',
+      }, prefersReduced ? '<' : '-=0.1');
+
+    // Mole block and cards
+    const moleBlock = section.querySelector('[data-attention-block="mole"]');
+    const moleCards = section.querySelectorAll('[data-mole-card]');
+    const moleArcs = section.querySelectorAll('.attention-viz__mole-arcs [data-attention-arc]');
+
+    const tl3 = gsapLib.timeline({
+      scrollTrigger: {
+        trigger: moleBlock,
+        start: 'top 75%',
+        toggleActions: 'play none none reverse',
+      },
+    });
+
+    if (!prefersReduced) {
+      gsapLib.set(moleCards, { y: 20 });
+    }
+
+    tl3.to(moleBlock, { opacity: 1, duration: prefersReduced ? 0.2 : 0.5 })
+      .to(moleCards, {
+        opacity: 1,
+        y: 0,
+        duration: prefersReduced ? 0.1 : 0.45,
+        stagger: prefersReduced ? 0 : 0.15,
+        ease: 'power2.out',
+      }, prefersReduced ? '<' : '-=0.2')
+      .to(moleArcs, {
+        strokeDashoffset: 0,
+        duration: prefersReduced ? 0.1 : 0.5,
+        stagger: prefersReduced ? 0 : 0.03,
+        ease: 'power2.inOut',
+      }, prefersReduced ? '<' : '-=0.3');
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initAttentionViz);
+  } else {
+    initAttentionViz();
+  }
+</script>

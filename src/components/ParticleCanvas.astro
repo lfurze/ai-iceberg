@@ -1,0 +1,264 @@
+---
+/**
+ * ParticleCanvas.astro
+ * Subtle ambient particle background — small glowing dots drifting like data points
+ * with faint connection lines between nearby particles (neural network aesthetic).
+ * Fixed behind all content. Respects prefers-reduced-motion.
+ */
+---
+
+<canvas id="particle-canvas" aria-hidden="true"></canvas>
+
+<style>
+  #particle-canvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: -1;
+    pointer-events: none;
+  }
+</style>
+
+<script>
+  const canvas = document.getElementById('particle-canvas') as HTMLCanvasElement;
+  const ctx = canvas.getContext('2d');
+
+  if (ctx) {
+    // ---- Configuration ----
+    const PARTICLE_COUNT_DESKTOP = 50;
+    const PARTICLE_COUNT_MOBILE = 25;
+    const CONNECTION_DISTANCE = 140;
+    const PARTICLE_MIN_RADIUS = 1;
+    const PARTICLE_MAX_RADIUS = 2.5;
+    const BASE_SPEED = 0.15;
+    const SCROLL_PARALLAX_FACTOR = 0.08;
+
+    const COLORS = [
+      'rgba(0, 212, 255,',   // #00d4ff cyan
+      'rgba(14, 165, 233,',  // #0ea5e9 sky blue
+      'rgba(56, 189, 248,',  // #38bdf8 light blue
+      'rgba(125, 211, 252,', // #7dd3fc pale blue
+    ];
+
+    // ---- State ----
+    let particles: Particle[] = [];
+    let animationFrameId: number | null = null;
+    let scrollY = 0;
+    let width = 0;
+    let height = 0;
+    let reducedMotion = false;
+
+    interface Particle {
+      x: number;
+      y: number;
+      vx: number;
+      vy: number;
+      radius: number;
+      color: string;
+      opacity: number;
+      baseOpacity: number;
+    }
+
+    // ---- Check reduced motion preference ----
+    function checkReducedMotion(): boolean {
+      return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    }
+
+    // ---- Get particle count based on viewport ----
+    function getParticleCount(): number {
+      return window.innerWidth < 768 ? PARTICLE_COUNT_MOBILE : PARTICLE_COUNT_DESKTOP;
+    }
+
+    // ---- Create a single particle ----
+    function createParticle(): Particle {
+      const opacity = 0.1 + Math.random() * 0.2; // 0.1 to 0.3
+      return {
+        x: Math.random() * width,
+        y: Math.random() * height,
+        vx: (Math.random() - 0.5) * BASE_SPEED * 2,
+        vy: (Math.random() - 0.5) * BASE_SPEED * 2,
+        radius: PARTICLE_MIN_RADIUS + Math.random() * (PARTICLE_MAX_RADIUS - PARTICLE_MIN_RADIUS),
+        color: COLORS[Math.floor(Math.random() * COLORS.length)],
+        opacity: opacity,
+        baseOpacity: opacity,
+      };
+    }
+
+    // ---- Initialize particles ----
+    function initParticles() {
+      const count = getParticleCount();
+      particles = [];
+      for (let i = 0; i < count; i++) {
+        particles.push(createParticle());
+      }
+    }
+
+    // ---- Resize canvas to match window ----
+    function resize() {
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      width = window.innerWidth;
+      height = window.innerHeight;
+      canvas.width = width * dpr;
+      canvas.height = height * dpr;
+      canvas.style.width = width + 'px';
+      canvas.style.height = height + 'px';
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+
+    // ---- Draw connection lines between nearby particles ----
+    function drawConnections() {
+      for (let i = 0; i < particles.length; i++) {
+        for (let j = i + 1; j < particles.length; j++) {
+          const dx = particles[i].x - particles[j].x;
+          const dy = particles[i].y - particles[j].y;
+          const distSq = dx * dx + dy * dy;
+          const maxDistSq = CONNECTION_DISTANCE * CONNECTION_DISTANCE;
+
+          if (distSq < maxDistSq) {
+            const dist = Math.sqrt(distSq);
+            const opacity = (1 - dist / CONNECTION_DISTANCE) * 0.08;
+            ctx.beginPath();
+            ctx.moveTo(particles[i].x, particles[i].y);
+            ctx.lineTo(particles[j].x, particles[j].y);
+            ctx.strokeStyle = `rgba(56, 189, 248, ${opacity})`;
+            ctx.lineWidth = 0.5;
+            ctx.stroke();
+          }
+        }
+      }
+    }
+
+    // ---- Draw a single particle ----
+    function drawParticle(p: Particle) {
+      // Glow layer
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.radius * 3, 0, Math.PI * 2);
+      ctx.fillStyle = p.color + (p.opacity * 0.3) + ')';
+      ctx.fill();
+
+      // Core dot
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+      ctx.fillStyle = p.color + p.opacity + ')';
+      ctx.fill();
+    }
+
+    // ---- Update particle positions ----
+    function updateParticles() {
+      const parallaxOffset = scrollY * SCROLL_PARALLAX_FACTOR;
+
+      for (const p of particles) {
+        p.x += p.vx;
+        p.y += p.vy;
+
+        // Wrap around edges (using base y without parallax for bounds check)
+        if (p.x < -10) p.x = width + 10;
+        if (p.x > width + 10) p.x = -10;
+        if (p.y < -10) p.y = height + 10;
+        if (p.y > height + 10) p.y = -10;
+
+        // Gentle opacity pulsing
+        p.opacity = p.baseOpacity + Math.sin(Date.now() * 0.001 + p.x * 0.01) * 0.05;
+      }
+    }
+
+    // ---- Main render loop ----
+    function render() {
+      ctx.clearRect(0, 0, width, height);
+
+      // Apply subtle vertical parallax from scroll
+      const parallaxOffset = scrollY * SCROLL_PARALLAX_FACTOR;
+      ctx.save();
+      ctx.translate(0, -parallaxOffset % height);
+
+      drawConnections();
+      for (const p of particles) {
+        drawParticle(p);
+      }
+
+      ctx.restore();
+
+      if (!reducedMotion) {
+        updateParticles();
+      }
+
+      animationFrameId = requestAnimationFrame(render);
+    }
+
+    // ---- Static render for reduced motion ----
+    function renderStatic() {
+      ctx.clearRect(0, 0, width, height);
+      drawConnections();
+      for (const p of particles) {
+        drawParticle(p);
+      }
+    }
+
+    // ---- Initialize ----
+    function init() {
+      reducedMotion = checkReducedMotion();
+      resize();
+      initParticles();
+
+      if (reducedMotion) {
+        renderStatic();
+      } else {
+        render();
+      }
+    }
+
+    // ---- Event listeners ----
+    window.addEventListener('scroll', () => {
+      scrollY = window.scrollY;
+    }, { passive: true });
+
+    let resizeTimeout: ReturnType<typeof setTimeout>;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimeout);
+      resizeTimeout = setTimeout(() => {
+        resize();
+        const currentCount = particles.length;
+        const targetCount = getParticleCount();
+
+        if (targetCount < currentCount) {
+          particles.length = targetCount;
+        } else {
+          while (particles.length < targetCount) {
+            particles.push(createParticle());
+          }
+        }
+
+        if (reducedMotion) {
+          renderStatic();
+        }
+      }, 200);
+    });
+
+    // Listen for reduced motion preference changes
+    window.matchMedia('(prefers-reduced-motion: reduce)').addEventListener('change', (e) => {
+      reducedMotion = e.matches;
+      if (reducedMotion) {
+        if (animationFrameId !== null) {
+          cancelAnimationFrame(animationFrameId);
+          animationFrameId = null;
+        }
+        renderStatic();
+      } else {
+        render();
+      }
+    });
+
+    // Clean up on page unload
+    document.addEventListener('astro:before-swap', () => {
+      if (animationFrameId !== null) {
+        cancelAnimationFrame(animationFrameId);
+        animationFrameId = null;
+      }
+    });
+
+    // Start
+    init();
+  }
+</script>

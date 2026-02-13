@@ -1,0 +1,423 @@
+---
+/**
+ * TokenViz.astro — Interactive tokenization visualization
+ * Shows how text is broken into subword tokens (BPE/WordPiece style)
+ * with color-coded boxes and numerical token IDs.
+ */
+
+const tokens = [
+  { text: "The",     id: 464,   type: "word" },
+  { text: " animal", id: 5765,  type: "word" },
+  { text: " didn",   id: 1422,  type: "subword" },
+  { text: "'t",      id: 956,   type: "subword" },
+  { text: " cross",  id: 3108,  type: "word" },
+  { text: " the",    id: 279,   type: "word" },
+  { text: " street", id: 8080,  type: "word" },
+  { text: " because",id: 1606,  type: "word" },
+  { text: " it",     id: 433,   type: "word" },
+  { text: " was",    id: 574,   type: "word" },
+  { text: " too",    id: 2288,  type: "word" },
+  { text: " tired",  id: 12544, type: "word" },
+];
+
+const originalSentence = "The animal didn't cross the street because it was too tired";
+---
+
+<section class="token-viz" id="token-viz-section" aria-label="Tokenization visualization">
+  <div class="token-viz__inner">
+    <div class="token-viz__text-col" data-token-text>
+      <p class="token-viz__label">Original text</p>
+      <p class="token-viz__sentence" id="token-original-sentence">{originalSentence}</p>
+
+      <div class="token-viz__arrow" data-token-arrow aria-hidden="true">
+        <svg width="24" height="48" viewBox="0 0 24 48">
+          <path d="M12 0 L12 40 M4 32 L12 44 L20 32" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span class="token-viz__arrow-label">Tokenizer (BPE)</span>
+      </div>
+
+      <p class="token-viz__label">Tokens</p>
+      <div class="token-viz__grid" id="token-grid" role="list" aria-label="Tokenized output">
+        {tokens.map((token, i) => (
+          <div
+            class={`token-viz__token token-viz__token--${token.type}`}
+            data-token-index={i}
+            data-token-type={token.type}
+            role="listitem"
+            aria-label={`Token: "${token.text.trim()}", ID: ${token.id}, type: ${token.type}`}
+          >
+            <span class="token-viz__token-text">{token.text}</span>
+            <span class="token-viz__token-id" data-token-id>{token.id}</span>
+          </div>
+        ))}
+      </div>
+
+      <div class="token-viz__legend" data-token-legend>
+        <div class="token-viz__legend-item">
+          <span class="token-viz__legend-swatch token-viz__legend-swatch--word"></span>
+          <span>Full word</span>
+        </div>
+        <div class="token-viz__legend-item">
+          <span class="token-viz__legend-swatch token-viz__legend-swatch--subword"></span>
+          <span>Subword piece</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="token-viz__explain-col" data-token-explain>
+      <div class="token-viz__explainer">
+        <h3 class="token-viz__explainer-title">Tokens: The Scrabble Tiles of AI</h3>
+        <p>
+          Before an LLM can process text, it must break it into <strong>tokens</strong> &mdash;
+          small pieces it can work with, like Scrabble tiles.
+        </p>
+        <p>
+          Tokens are not always whole words. The tokenizer uses <strong>Byte-Pair Encoding (BPE)</strong>
+          to split rare or compound words into smaller, more common pieces. Notice how
+          <em>&ldquo;didn&rsquo;t&rdquo;</em> becomes two tokens: <code>didn</code> and <code>&rsquo;t</code>.
+        </p>
+        <p>
+          Each token is then mapped to a <strong>numerical ID</strong> &mdash; the only thing the model
+          actually sees. GPT-4&rsquo;s vocabulary contains roughly 100,000 possible tokens.
+        </p>
+        <p class="token-viz__aside">
+          As Andrej Karpathy explains, &ldquo;a lot of weird behaviors and problems of LLMs
+          actually trace back to tokenization.&rdquo;
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .token-viz {
+    --token-word: #38bdf8;
+    --token-word-bg: rgba(56, 189, 248, 0.1);
+    --token-word-border: rgba(56, 189, 248, 0.4);
+    --token-subword: #a78bfa;
+    --token-subword-bg: rgba(167, 139, 250, 0.1);
+    --token-subword-border: rgba(167, 139, 250, 0.4);
+
+    position: relative;
+    width: 100%;
+    padding: 4rem 1.5rem;
+  }
+
+  .token-viz__inner {
+    max-width: 1100px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1.2fr 1fr;
+    gap: 3rem;
+    align-items: start;
+  }
+
+  .token-viz__label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.4);
+    margin-bottom: 0.75rem;
+  }
+
+  .token-viz__sentence {
+    font-size: 1.25rem;
+    line-height: 1.6;
+    color: rgba(255, 255, 255, 0.85);
+    font-style: italic;
+    padding: 1rem 1.25rem;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 8px;
+  }
+
+  /* Arrow between original and tokens */
+  .token-viz__arrow {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.75rem 0;
+    color: rgba(255, 255, 255, 0.3);
+    opacity: 0;
+  }
+
+  .token-viz__arrow-label {
+    font-size: 0.7rem;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.3);
+  }
+
+  /* Token grid */
+  .token-viz__grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .token-viz__token {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 0.5rem 0.75rem 0.35rem;
+    border-radius: 6px;
+    border: 1px solid transparent;
+    opacity: 0;
+    transform: translateY(8px) scale(0.95);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .token-viz__token:hover {
+    box-shadow: 0 0 16px rgba(56, 189, 248, 0.15);
+  }
+
+  .token-viz__token--word {
+    background: var(--token-word-bg);
+    border-color: var(--token-word-border);
+  }
+
+  .token-viz__token--word:hover {
+    border-color: var(--token-word);
+  }
+
+  .token-viz__token--subword {
+    background: var(--token-subword-bg);
+    border-color: var(--token-subword-border);
+  }
+
+  .token-viz__token--subword:hover {
+    border-color: var(--token-subword);
+  }
+
+  .token-viz__token-text {
+    font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+    font-size: 1rem;
+    color: rgba(255, 255, 255, 0.9);
+    white-space: pre;
+  }
+
+  .token-viz__token-id {
+    font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+    font-size: 0.65rem;
+    color: rgba(255, 255, 255, 0.35);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+
+  .token-viz__token:hover .token-viz__token-id {
+    opacity: 1;
+  }
+
+  /* Legend */
+  .token-viz__legend {
+    display: flex;
+    gap: 1.5rem;
+    margin-top: 1.25rem;
+    opacity: 0;
+  }
+
+  .token-viz__legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.5);
+  }
+
+  .token-viz__legend-swatch {
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+  }
+
+  .token-viz__legend-swatch--word {
+    background: var(--token-word);
+  }
+
+  .token-viz__legend-swatch--subword {
+    background: var(--token-subword);
+  }
+
+  /* Explanation column */
+  .token-viz__explain-col {
+    opacity: 0;
+  }
+
+  .token-viz__explainer {
+    padding: 1.5rem;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 12px;
+    position: sticky;
+    top: 6rem;
+  }
+
+  .token-viz__explainer-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.95);
+    margin-bottom: 1rem;
+  }
+
+  .token-viz__explainer p {
+    font-size: 0.95rem;
+    line-height: 1.7;
+    color: rgba(255, 255, 255, 0.65);
+    margin-bottom: 0.85rem;
+  }
+
+  .token-viz__explainer p:last-child {
+    margin-bottom: 0;
+  }
+
+  .token-viz__explainer strong {
+    color: var(--token-word);
+    font-weight: 600;
+  }
+
+  .token-viz__explainer em {
+    color: var(--token-subword);
+    font-style: italic;
+  }
+
+  .token-viz__explainer code {
+    font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+    font-size: 0.85em;
+    background: rgba(255, 255, 255, 0.06);
+    padding: 0.15em 0.4em;
+    border-radius: 4px;
+    color: rgba(255, 255, 255, 0.8);
+  }
+
+  .token-viz__aside {
+    font-style: italic;
+    padding-left: 1rem;
+    border-left: 2px solid rgba(56, 189, 248, 0.3);
+    color: rgba(255, 255, 255, 0.5) !important;
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .token-viz {
+      padding: 2.5rem 1rem;
+    }
+
+    .token-viz__inner {
+      grid-template-columns: 1fr;
+      gap: 2rem;
+    }
+
+    .token-viz__sentence {
+      font-size: 1.05rem;
+    }
+
+    .token-viz__token {
+      padding: 0.4rem 0.6rem 0.3rem;
+    }
+
+    .token-viz__token-text {
+      font-size: 0.85rem;
+    }
+
+    .token-viz__explainer {
+      position: static;
+    }
+  }
+
+  /* Reduced motion */
+  @media (prefers-reduced-motion: reduce) {
+    .token-viz__token {
+      transition: none;
+    }
+  }
+</style>
+
+<script>
+  /**
+   * TokenViz animation — designed to be orchestrated by GSAP ScrollTrigger
+   * from the main page. Exposes initialization on window for the assembler.
+   *
+   * GSAP targets:
+   *   - [data-token-arrow]     : the BPE arrow (animate opacity)
+   *   - [data-token-index="N"] : individual tokens (animate opacity, y, scale)
+   *   - [data-token-id]        : token ID numbers (animate opacity)
+   *   - [data-token-legend]    : legend block (animate opacity)
+   *   - [data-token-explain]   : explanation column (animate opacity, x)
+   *
+   * If GSAP is not available (fallback), all elements are made visible immediately.
+   */
+  function initTokenViz() {
+    const gsap = (window as any).gsap;
+    const ScrollTrigger = (window as any).ScrollTrigger;
+
+    if (!gsap || !ScrollTrigger) {
+      // Fallback: show everything
+      document.querySelectorAll<HTMLElement>('.token-viz__token, .token-viz__arrow, .token-viz__legend, .token-viz__explain-col, .token-viz__token-id').forEach(el => {
+        el.style.opacity = '1';
+        el.style.transform = 'none';
+      });
+      return;
+    }
+
+    const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const section = document.getElementById('token-viz-section');
+    if (!section) return;
+
+    const tokens = section.querySelectorAll('.token-viz__token');
+    const tokenIds = section.querySelectorAll('[data-token-id]');
+    const arrow = section.querySelector('[data-token-arrow]');
+    const legend = section.querySelector('[data-token-legend]');
+    const explain = section.querySelector('[data-token-explain]');
+
+    const tl = gsap.timeline({
+      scrollTrigger: {
+        trigger: section,
+        start: 'top 75%',
+        end: 'bottom 25%',
+        toggleActions: 'play none none reverse',
+      },
+    });
+
+    if (prefersReduced) {
+      // Simple fade for reduced motion
+      tl.to(arrow, { opacity: 1, duration: 0.3 })
+        .to(tokens, { opacity: 1, y: 0, scale: 1, duration: 0.3, stagger: 0 }, '<')
+        .to(tokenIds, { opacity: 0.35, duration: 0.3 }, '<')
+        .to(legend, { opacity: 1, duration: 0.3 }, '<')
+        .to(explain, { opacity: 1, duration: 0.3 }, '<');
+    } else {
+      // Full animation sequence
+      tl.to(arrow, { opacity: 1, duration: 0.4, ease: 'power2.out' })
+        .to(tokens, {
+          opacity: 1,
+          y: 0,
+          scale: 1,
+          duration: 0.35,
+          stagger: 0.06,
+          ease: 'back.out(1.4)',
+        }, '-=0.1')
+        .to(tokenIds, {
+          opacity: 0.35,
+          duration: 0.3,
+          stagger: 0.04,
+          ease: 'power2.out',
+        }, '-=0.3')
+        .to(legend, { opacity: 1, duration: 0.4, ease: 'power2.out' }, '-=0.2')
+        .to(explain, { opacity: 1, x: 0, duration: 0.5, ease: 'power2.out' }, '-=0.4');
+
+      // Set initial state for explain column
+      gsap.set(explain, { x: 20 });
+    }
+  }
+
+  // Initialize when DOM is ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initTokenViz);
+  } else {
+    initTokenViz();
+  }
+</script>

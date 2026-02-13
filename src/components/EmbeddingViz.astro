@@ -1,0 +1,457 @@
+---
+/**
+ * EmbeddingViz.astro — Word embedding vector space visualization
+ *
+ * Shows a 2D projection of "meaning space" with words plotted as labeled dots,
+ * semantic clusters, and the classic king - man + woman ≈ queen vector arithmetic.
+ *
+ * All positions are hand-tuned to create a clear, readable layout in a
+ * ~700x500 SVG coordinate space. Clusters are placed to avoid overlap.
+ */
+
+interface WordPoint {
+  word: string;
+  x: number;
+  y: number;
+  cluster: string;
+}
+
+const words: WordPoint[] = [
+  // Royalty cluster (top-right area)
+  { word: "king",     x: 520, y: 120, cluster: "royalty" },
+  { word: "queen",    x: 580, y: 200, cluster: "royalty" },
+  { word: "prince",   x: 490, y: 190, cluster: "royalty" },
+  { word: "princess", x: 550, y: 265, cluster: "royalty" },
+
+  // Gender anchors (left-center)
+  { word: "man",      x: 160, y: 160, cluster: "people" },
+  { word: "woman",    x: 220, y: 240, cluster: "people" },
+  { word: "boy",      x: 130, y: 230, cluster: "people" },
+
+  // Animals cluster (bottom-left)
+  { word: "cat",      x: 110, y: 390, cluster: "animals" },
+  { word: "dog",      x: 180, y: 410, cluster: "animals" },
+  { word: "pet",      x: 150, y: 350, cluster: "animals" },
+
+  // Vehicles cluster (bottom-right)
+  { word: "car",      x: 500, y: 380, cluster: "vehicles" },
+  { word: "truck",    x: 570, y: 400, cluster: "vehicles" },
+];
+
+const clusterColors: Record<string, string> = {
+  royalty:  "#fbbf24",
+  people:   "#38bdf8",
+  animals:  "#34d399",
+  vehicles: "#a78bfa",
+};
+
+const clusterLabels: Record<string, string> = {
+  royalty:  "Royalty",
+  people:   "People",
+  animals:  "Animals",
+  vehicles: "Vehicles",
+};
+
+// Vector arithmetic: king - man + woman ≈ queen
+// Arrow 1: man → king   (represents the "royalty" direction)
+// Arrow 2: woman → queen (same direction applied from woman)
+const vectorArrows = [
+  { x1: 160, y1: 160, x2: 520, y2: 120, label: "man → king",    id: "arrow-mk" },
+  { x1: 220, y1: 240, x2: 580, y2: 200, label: "woman → queen", id: "arrow-wq" },
+];
+---
+
+<section class="embedding-viz" id="embedding-viz-section" aria-label="Word embeddings vector space visualization">
+  <div class="embedding-viz__inner">
+
+    <div class="embedding-viz__vis-col">
+      <svg
+        class="embedding-viz__svg"
+        id="embedding-svg"
+        viewBox="0 0 700 480"
+        preserveAspectRatio="xMidYMid meet"
+        role="img"
+        aria-label="2D projection of word embedding space showing semantic clusters and the king minus man plus woman equals queen vector analogy"
+      >
+        <!-- Subtle grid background -->
+        <defs>
+          <pattern id="embed-grid" width="40" height="40" patternUnits="userSpaceOnUse">
+            <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(255,255,255,0.03)" stroke-width="0.5"/>
+          </pattern>
+          <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto" markerUnits="strokeWidth">
+            <path d="M0,0 L8,3 L0,6" fill="#00d4ff" opacity="0.7"/>
+          </marker>
+          <marker id="arrowhead-dashed" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto" markerUnits="strokeWidth">
+            <path d="M0,0 L8,3 L0,6" fill="#fbbf24" opacity="0.7"/>
+          </marker>
+        </defs>
+
+        <!-- Grid background -->
+        <rect width="700" height="480" fill="url(#embed-grid)" rx="12"/>
+
+        <!-- Cluster background ellipses -->
+        <ellipse cx="540" cy="190" rx="95" ry="95" fill="rgba(251,191,36,0.04)" stroke="rgba(251,191,36,0.1)" stroke-width="1" stroke-dasharray="4 4" data-embed-cluster="royalty"/>
+        <ellipse cx="170" cy="210" rx="85" ry="75" fill="rgba(56,189,248,0.04)" stroke="rgba(56,189,248,0.1)" stroke-width="1" stroke-dasharray="4 4" data-embed-cluster="people"/>
+        <ellipse cx="150" cy="385" rx="75" ry="55" fill="rgba(52,211,153,0.04)" stroke="rgba(52,211,153,0.1)" stroke-width="1" stroke-dasharray="4 4" data-embed-cluster="animals"/>
+        <ellipse cx="535" cy="390" rx="70" ry="40" fill="rgba(167,139,250,0.04)" stroke="rgba(167,139,250,0.1)" stroke-width="1" stroke-dasharray="4 4" data-embed-cluster="vehicles"/>
+
+        <!-- Vector arrows (hidden initially, revealed by animation) -->
+        {vectorArrows.map((arrow) => (
+          <g data-embed-arrow={arrow.id} opacity="0">
+            <line
+              x1={arrow.x1} y1={arrow.y1}
+              x2={arrow.x2} y2={arrow.y2}
+              stroke={arrow.id === "arrow-wq" ? "#fbbf24" : "#00d4ff"}
+              stroke-width="2"
+              stroke-dasharray={arrow.id === "arrow-wq" ? "6 4" : "none"}
+              marker-end={arrow.id === "arrow-wq" ? "url(#arrowhead-dashed)" : "url(#arrowhead)"}
+              opacity="0.6"
+            />
+          </g>
+        ))}
+
+        <!-- Parallel indicator lines connecting the two arrows -->
+        <g data-embed-parallel opacity="0">
+          <line x1="160" y1="160" x2="220" y2="240" stroke="rgba(255,255,255,0.15)" stroke-width="1" stroke-dasharray="3 3"/>
+          <line x1="520" y1="120" x2="580" y2="200" stroke="rgba(255,255,255,0.15)" stroke-width="1" stroke-dasharray="3 3"/>
+        </g>
+
+        <!-- Word dots and labels -->
+        {words.map((w, i) => (
+          <g
+            class="embedding-viz__point"
+            data-embed-point={i}
+            data-embed-word={w.word}
+            data-embed-cluster-name={w.cluster}
+            opacity="0"
+          >
+            {/* Glow ring */}
+            <circle cx={w.x} cy={w.y} r="14" fill="none" stroke={clusterColors[w.cluster]} stroke-width="1" opacity="0.2"/>
+            {/* Dot */}
+            <circle cx={w.x} cy={w.y} r="5" fill={clusterColors[w.cluster]} opacity="0.9"/>
+            {/* Label */}
+            <text
+              x={w.x}
+              y={w.y - 18}
+              text-anchor="middle"
+              fill="rgba(255,255,255,0.8)"
+              font-size="12"
+              font-weight="500"
+              font-family="Inter, system-ui, sans-serif"
+            >
+              {w.word}
+            </text>
+          </g>
+        ))}
+
+        <!-- Equation annotation (hidden initially) -->
+        <g data-embed-equation opacity="0">
+          <rect x="230" y="430" width="240" height="32" rx="6" fill="rgba(0,0,0,0.5)" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+          <text x="350" y="451" text-anchor="middle" fill="rgba(255,255,255,0.8)" font-size="13" font-weight="600" font-family="Inter, system-ui, sans-serif">
+            king − man + woman ≈ queen
+          </text>
+        </g>
+      </svg>
+
+      <!-- Cluster legend -->
+      <div class="embedding-viz__legend" data-embed-legend>
+        {Object.entries(clusterLabels).map(([key, label]) => (
+          <div class="embedding-viz__legend-item">
+            <span class="embedding-viz__legend-dot" style={`background: ${clusterColors[key]}`}></span>
+            <span>{label}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+
+    <div class="embedding-viz__text-col" data-embed-text>
+      <div class="embedding-viz__explainer">
+        <h3 class="embedding-viz__title">Embeddings: GPS Coordinates in Meaning Space</h3>
+        <p>
+          Before a model can reason about words, it converts each token into a list of numbers called
+          an <strong>embedding</strong> &mdash; essentially GPS coordinates in a high-dimensional
+          &ldquo;meaning space.&rdquo;
+        </p>
+        <p>
+          Words with similar meanings cluster together. <em>King</em>, <em>queen</em>, <em>prince</em>,
+          and <em>princess</em> occupy the same neighborhood &mdash; as do <em>cat</em>, <em>dog</em>,
+          and <em>pet</em>.
+        </p>
+        <p>
+          The most famous discovery: <strong>directions encode relationships</strong>.
+          The direction from &ldquo;man&rdquo; to &ldquo;king&rdquo; captures the concept of royalty.
+          Apply that same direction from &ldquo;woman&rdquo; and you land near &ldquo;queen.&rdquo;
+        </p>
+        <p class="embedding-viz__formula">
+          king &minus; man + woman &asymp; queen
+        </p>
+        <p>
+          These positions are <strong>learned during training</strong>, not hand-coded &mdash; the model
+          discovers semantic structure by predicting which words appear in similar contexts, millions
+          of times over.
+        </p>
+        <p class="embedding-viz__cite">
+          First demonstrated by Mikolov et al. (2013) with Word2Vec. Modern LLMs use contextual embeddings
+          where a word&rsquo;s position shifts depending on the sentence around it.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .embedding-viz {
+    position: relative;
+    width: 100%;
+    padding: 4rem 1.5rem;
+  }
+
+  .embedding-viz__inner {
+    max-width: 1100px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1.3fr 1fr;
+    gap: 3rem;
+    align-items: start;
+  }
+
+  /* SVG visualization */
+  .embedding-viz__vis-col {
+    position: relative;
+  }
+
+  .embedding-viz__svg {
+    width: 100%;
+    height: auto;
+    display: block;
+    background: rgba(255, 255, 255, 0.01);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+  }
+
+  .embedding-viz__point {
+    cursor: default;
+  }
+
+  .embedding-viz__point:hover circle:first-child {
+    opacity: 0.5;
+    r: 18;
+  }
+
+  /* Legend */
+  .embedding-viz__legend {
+    display: flex;
+    gap: 1.5rem;
+    margin-top: 1rem;
+    justify-content: center;
+    opacity: 0;
+  }
+
+  .embedding-viz__legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.5);
+  }
+
+  .embedding-viz__legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  /* Text column */
+  .embedding-viz__text-col {
+    opacity: 0;
+  }
+
+  .embedding-viz__explainer {
+    padding: 1.5rem;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 12px;
+    position: sticky;
+    top: 6rem;
+  }
+
+  .embedding-viz__title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.95);
+    margin-bottom: 1rem;
+  }
+
+  .embedding-viz__explainer p {
+    font-size: 0.95rem;
+    line-height: 1.7;
+    color: rgba(255, 255, 255, 0.6);
+    margin-bottom: 0.85rem;
+  }
+
+  .embedding-viz__explainer p:last-child {
+    margin-bottom: 0;
+  }
+
+  .embedding-viz__explainer strong {
+    color: #38bdf8;
+    font-weight: 600;
+  }
+
+  .embedding-viz__explainer em {
+    color: #fbbf24;
+    font-style: italic;
+  }
+
+  .embedding-viz__formula {
+    text-align: center;
+    font-size: 1.1rem !important;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.85) !important;
+    padding: 0.75rem 1rem;
+    background: rgba(0, 212, 255, 0.05);
+    border: 1px solid rgba(0, 212, 255, 0.15);
+    border-radius: 8px;
+    font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+    letter-spacing: 0.02em;
+  }
+
+  .embedding-viz__cite {
+    font-size: 0.85rem !important;
+    font-style: italic;
+    color: rgba(255, 255, 255, 0.4) !important;
+    padding-left: 1rem;
+    border-left: 2px solid rgba(56, 189, 248, 0.2);
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .embedding-viz {
+      padding: 2.5rem 1rem;
+    }
+
+    .embedding-viz__inner {
+      grid-template-columns: 1fr;
+      gap: 2rem;
+    }
+
+    .embedding-viz__explainer {
+      position: static;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .embedding-viz__point:hover circle:first-child {
+      transition: none;
+    }
+  }
+</style>
+
+<script>
+  /**
+   * EmbeddingViz animation — GSAP ScrollTrigger orchestration
+   *
+   * Animation sequence:
+   * 1. Word points fade in by cluster (staggered)
+   * 2. Cluster backgrounds pulse gently
+   * 3. Vector arrows draw in (man→king first, then woman→queen)
+   * 4. Equation label fades in
+   * 5. Explanation text slides in
+   *
+   * GSAP targets:
+   *   - [data-embed-point]           : word dots (opacity)
+   *   - [data-embed-arrow]           : vector arrows (opacity)
+   *   - [data-embed-parallel]        : parallel connector lines (opacity)
+   *   - [data-embed-equation]        : equation label (opacity)
+   *   - [data-embed-legend]          : cluster legend (opacity)
+   *   - [data-embed-text]            : explanation column (opacity, x)
+   */
+  function initEmbeddingViz() {
+    const gsap = (window as any).gsap;
+    const ScrollTrigger = (window as any).ScrollTrigger;
+
+    const section = document.getElementById('embedding-viz-section');
+    if (!section) return;
+
+    const points = section.querySelectorAll('[data-embed-point]');
+    const arrowMK = section.querySelector('[data-embed-arrow="arrow-mk"]');
+    const arrowWQ = section.querySelector('[data-embed-arrow="arrow-wq"]');
+    const parallel = section.querySelector('[data-embed-parallel]');
+    const equation = section.querySelector('[data-embed-equation]');
+    const legend = section.querySelector('[data-embed-legend]');
+    const textCol = section.querySelector('[data-embed-text]');
+
+    if (!gsap || !ScrollTrigger) {
+      // Fallback: show everything
+      [points, [arrowMK, arrowWQ, parallel, equation, legend, textCol]].flat().forEach(el => {
+        if (el instanceof HTMLElement || el instanceof SVGElement) {
+          el.style.opacity = '1';
+          if (el instanceof SVGElement) {
+            el.setAttribute('opacity', '1');
+          }
+        }
+      });
+      points.forEach(p => p?.setAttribute('opacity', '1'));
+      return;
+    }
+
+    const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    // Group points by cluster for staggered reveal
+    const clusters = ['people', 'royalty', 'animals', 'vehicles'];
+    const clusteredPoints: SVGElement[][] = clusters.map(c =>
+      Array.from(section.querySelectorAll(`[data-embed-cluster-name="${c}"]`)) as SVGElement[]
+    );
+
+    const tl = gsap.timeline({
+      scrollTrigger: {
+        trigger: section,
+        start: 'top 70%',
+        end: 'bottom 25%',
+        toggleActions: 'play none none reverse',
+      },
+    });
+
+    if (prefersReduced) {
+      // Simple reveal
+      tl.set(points, { attr: { opacity: 1 } })
+        .set([arrowMK, arrowWQ], { attr: { opacity: 1 } })
+        .set(parallel, { attr: { opacity: 1 } })
+        .set(equation, { attr: { opacity: 1 } })
+        .to(legend, { opacity: 1, duration: 0.2 })
+        .to(textCol, { opacity: 1, duration: 0.2 }, '<');
+    } else {
+      // Stagger clusters in
+      let offset = 0;
+      clusteredPoints.forEach((clusterGroup, ci) => {
+        tl.to(clusterGroup, {
+          attr: { opacity: 1 },
+          duration: 0.4,
+          stagger: 0.08,
+          ease: 'power2.out',
+        }, offset);
+        offset += 0.2;
+      });
+
+      // Legend appears with the points
+      tl.to(legend, { opacity: 1, duration: 0.4, ease: 'power2.out' }, 0.3);
+
+      // Vector arrows draw in
+      tl.to(arrowMK, { attr: { opacity: 1 }, duration: 0.6, ease: 'power2.out' }, '+=0.2')
+        .to(arrowWQ, { attr: { opacity: 1 }, duration: 0.6, ease: 'power2.out' }, '-=0.3')
+        .to(parallel, { attr: { opacity: 1 }, duration: 0.4, ease: 'power2.out' }, '-=0.3')
+        .to(equation, { attr: { opacity: 1 }, duration: 0.5, ease: 'power2.out' }, '-=0.2');
+
+      // Text column slides in
+      gsap.set(textCol, { x: 24 });
+      tl.to(textCol, { opacity: 1, x: 0, duration: 0.6, ease: 'power2.out' }, '-=0.5');
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initEmbeddingViz);
+  } else {
+    initEmbeddingViz();
+  }
+</script>

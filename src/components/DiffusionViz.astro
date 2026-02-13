@@ -5,106 +5,14 @@
  * Visualizes the diffusion model denoising process used in image generation
  * (DALL-E, Stable Diffusion, Midjourney).
  *
- * Shows a grid of colored cells that starts as random noise and progressively
- * resolves into a recognizable pattern (a red star on a blue background),
- * demonstrating how diffusion models reverse the noise-addition process.
+ * Uses HTML5 Canvas at 64x64 resolution to render a proper 5-pointed star
+ * that emerges from random noise over 7 denoising steps.
+ * Center-outward denoising: pixels closer to center resolve first.
  *
- * 7 steps: pure noise -> ... -> coherent image
- * Text prompt displayed at top to show text-guided generation.
- * GSAP-triggerable via data attributes, step-by-step reveal tied to scroll.
+ * GSAP ScrollTrigger with onUpdate maps scroll progress to step index.
  */
 
-// Grid configuration: 16x16 = 256 cells
-// Target pattern: red star on blue background
-// Star is defined by a simple geometric check
-
-const GRID_SIZE = 16;
-const STEPS = 7; // 0 = pure noise, 6 = final image
-
-// Color palette
-const BLUE_BG = '#1e3a5f';
-const STAR_RED = '#dc2626';
-const NOISE_COLORS = [
-  '#6366f1', '#8b5cf6', '#ec4899', '#f43f5e', '#f97316',
-  '#eab308', '#22c55e', '#14b8a6', '#0ea5e9', '#3b82f6',
-  '#a855f7', '#d946ef', '#ef4444', '#84cc16', '#06b6d4',
-  '#f59e0b', '#64748b', '#475569', '#7c3aed', '#2563eb',
-];
-
-// Determine if a cell is part of the star
-function isStarCell(row: number, col: number): boolean {
-  // Center the star in the grid
-  const cx = 7.5;
-  const cy = 7.5;
-  const r = row - cy;
-  const c = col - cx;
-  const angle = Math.atan2(r, c);
-  const dist = Math.sqrt(r * r + c * c);
-  // 5-pointed star formula
-  const starAngle = ((angle + Math.PI) / (2 * Math.PI)) * 5;
-  const innerR = 2.5;
-  const outerR = 6;
-  const starR = innerR + (outerR - innerR) * (0.5 + 0.5 * Math.cos(starAngle * 2 * Math.PI));
-  return dist <= starR * 0.7;
-}
-
-// Seeded random for reproducible noise
-function seededRandom(seed: number): () => number {
-  let s = seed;
-  return () => {
-    s = (s * 1664525 + 1013904223) & 0xffffffff;
-    return (s >>> 0) / 0xffffffff;
-  };
-}
-
-// Pre-compute all grid states for each step
-type CellState = { color: string; opacity: number };
-
-function computeGridStates(): CellState[][][] {
-  const rand = seededRandom(42);
-  const allSteps: CellState[][][] = [];
-
-  for (let step = 0; step < STEPS; step++) {
-    const grid: CellState[][] = [];
-    const progress = step / (STEPS - 1); // 0 = full noise, 1 = final image
-
-    for (let row = 0; row < GRID_SIZE; row++) {
-      const rowCells: CellState[] = [];
-      for (let col = 0; col < GRID_SIZE; col++) {
-        const isStar = isStarCell(row, col);
-        const targetColor = isStar ? STAR_RED : BLUE_BG;
-        const noiseColor = NOISE_COLORS[Math.floor(rand() * NOISE_COLORS.length)];
-
-        if (progress >= 1) {
-          rowCells.push({ color: targetColor, opacity: 1 });
-        } else if (progress <= 0) {
-          rowCells.push({ color: noiseColor, opacity: 1 });
-        } else {
-          // Blend: cells closer to their target appear earlier with some randomness
-          const cellRand = rand();
-          const threshold = progress * 1.3 - cellRand * 0.5;
-
-          if (threshold > 0.5) {
-            rowCells.push({ color: targetColor, opacity: 1 });
-          } else if (threshold > 0.2) {
-            // Partially resolved: tint toward target
-            rowCells.push({ color: noiseColor, opacity: 0.6 + progress * 0.4 });
-          } else {
-            rowCells.push({ color: noiseColor, opacity: 1 });
-          }
-        }
-      }
-      grid.push(rowCells);
-    }
-    allSteps.push(grid);
-  }
-  return allSteps;
-}
-
-const gridStates = computeGridStates();
-const CELL_SIZE = 20;
-const GAP = 2;
-const SVG_SIZE = GRID_SIZE * (CELL_SIZE + GAP) - GAP;
+const STEPS = 7;
 
 const stepLabels = [
   'Step 0: Pure noise',
@@ -155,34 +63,14 @@ const stepLabels = [
         {stepLabels[0]}
       </div>
 
-      <!-- Grid visualization: one SVG per step, only one visible at a time -->
+      <!-- Canvas visualization -->
       <div class="diff-grid-container" data-diff="grid-container">
-        {gridStates.map((grid, stepIndex) => (
-          <svg
-            class={`diff-grid-svg ${stepIndex === 0 ? 'active' : ''}`}
-            data-diff-grid={stepIndex}
-            viewBox={`0 0 ${SVG_SIZE} ${SVG_SIZE}`}
-            xmlns="http://www.w3.org/2000/svg"
-            role="img"
-            aria-label={stepLabels[stepIndex]}
-          >
-            {grid.map((row, r) =>
-              row.map((cell, c) => (
-                <rect
-                  x={c * (CELL_SIZE + GAP)}
-                  y={r * (CELL_SIZE + GAP)}
-                  width={CELL_SIZE}
-                  height={CELL_SIZE}
-                  rx="2"
-                  fill={cell.color}
-                  opacity={cell.opacity}
-                  class="diff-cell"
-                  data-diff-cell={`${stepIndex}-${r}-${c}`}
-                />
-              ))
-            )}
-          </svg>
-        ))}
+        <canvas
+          id="diffusion-canvas"
+          class="diff-canvas"
+          role="img"
+          aria-label="Diffusion denoising visualization showing noise transforming into a red star on blue background"
+        ></canvas>
       </div>
 
       <!-- Denoising arrow / progress bar -->
@@ -373,23 +261,12 @@ const stepLabels = [
     aspect-ratio: 1;
   }
 
-  .diff-grid-svg {
-    position: absolute;
-    inset: 0;
+  .diff-canvas {
     width: 100%;
     height: 100%;
-    opacity: 0;
-    transition: opacity 0.4s ease;
-    pointer-events: none;
-  }
-
-  .diff-grid-svg.active {
-    opacity: 1;
-    pointer-events: auto;
-  }
-
-  .diff-cell {
-    transition: fill 0.3s ease, opacity 0.3s ease;
+    border-radius: 6px;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
   }
 
   /* === Progress bar === */
@@ -455,8 +332,6 @@ const stepLabels = [
 
   /* === Reduced motion === */
   @media (prefers-reduced-motion: reduce) {
-    .diff-grid-svg,
-    .diff-cell,
     .diff-step-dot-inner,
     .diff-progress-fill,
     .diff-step-explanation {
@@ -490,33 +365,217 @@ const stepLabels = [
 
 <script>
   /**
-   * DiffusionViz scroll animation orchestration.
-   * Relies on gsap + ScrollTrigger being registered globally by Layout.astro.
+   * DiffusionViz — Canvas-based denoising visualization.
    *
-   * Animation sequence:
-   * 1. Heading and description fade in
-   * 2. Prompt display animates in
-   * 3. Grid steps through 7 denoising stages tied to scroll progress
-   * 4. Step dots, labels, progress bar, and explanations update at each step
+   * Pre-computes 7 step frames at 64x64 resolution using a proper 5-pointed
+   * star polygon with point-in-polygon hit testing. Denoising uses per-pixel
+   * lerp with center-outward spatial coherence bias.
+   *
+   * ScrollTrigger.create with onUpdate maps scroll progress to step index.
    */
   function initDiffusionViz() {
-    const gsap = (window as any).gsap;
-    const ScrollTrigger = (window as any).ScrollTrigger;
-    if (!gsap || !ScrollTrigger) return;
+    const RES = 64;
+    const STEPS = 7;
 
+    // --- Target image colors ---
+    const STAR_R = 220, STAR_G = 38, STAR_B = 38;     // #dc2626
+    const BG_R = 30, BG_G = 58, BG_B = 95;            // #1e3a5f
+
+    // --- 5-pointed star geometry ---
+    // Build star polygon vertices: alternate outer/inner radius at 36-degree intervals
+    const cx = RES / 2;
+    const cy = RES / 2;
+    const outerR = RES * 0.42;  // outer radius
+    const innerR = outerR * 0.38; // inner radius (golden ratio-ish for a nice star)
+    const starVertices: [number, number][] = [];
+
+    for (let i = 0; i < 10; i++) {
+      const angle = (i * Math.PI / 5) - Math.PI / 2; // start pointing up
+      const r = i % 2 === 0 ? outerR : innerR;
+      starVertices.push([cx + r * Math.cos(angle), cy + r * Math.sin(angle)]);
+    }
+
+    // Point-in-polygon test (ray casting)
+    function isInsideStar(px: number, py: number): boolean {
+      let inside = false;
+      const n = starVertices.length;
+      for (let i = 0, j = n - 1; i < n; j = i++) {
+        const [xi, yi] = starVertices[i];
+        const [xj, yj] = starVertices[j];
+        if (((yi > py) !== (yj > py)) &&
+            (px < (xj - xi) * (py - yi) / (yj - yi) + xi)) {
+          inside = !inside;
+        }
+      }
+      return inside;
+    }
+
+    // --- Pre-compute target image and distance map ---
+    // targetImage: for each pixel, [r, g, b] of the final image
+    // distMap: normalized distance from center (0 at center, 1 at corners)
+    const targetImage = new Uint8Array(RES * RES * 3);
+    const distMap = new Float32Array(RES * RES);
+    const maxDist = Math.sqrt(cx * cx + cy * cy);
+
+    for (let y = 0; y < RES; y++) {
+      for (let x = 0; x < RES; x++) {
+        const idx = y * RES + x;
+        // Test center of pixel
+        const isStar = isInsideStar(x + 0.5, y + 0.5);
+        const i3 = idx * 3;
+        if (isStar) {
+          targetImage[i3] = STAR_R;
+          targetImage[i3 + 1] = STAR_G;
+          targetImage[i3 + 2] = STAR_B;
+        } else {
+          targetImage[i3] = BG_R;
+          targetImage[i3 + 1] = BG_G;
+          targetImage[i3 + 2] = BG_B;
+        }
+        // Distance from center, normalized 0..1
+        const dx = (x + 0.5) - cx;
+        const dy = (y + 0.5) - cy;
+        distMap[idx] = Math.sqrt(dx * dx + dy * dy) / maxDist;
+      }
+    }
+
+    // --- Seeded PRNG ---
+    function mulberry32(seed: number) {
+      return function() {
+        seed |= 0; seed = seed + 0x6D2B79F5 | 0;
+        let t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+        t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+        return ((t ^ t >>> 14) >>> 0) / 4294967296;
+      };
+    }
+
+    const rand = mulberry32(42);
+
+    // --- Generate pure noise (step 0) ---
+    const noiseR = new Uint8Array(RES * RES);
+    const noiseG = new Uint8Array(RES * RES);
+    const noiseB = new Uint8Array(RES * RES);
+
+    for (let i = 0; i < RES * RES; i++) {
+      noiseR[i] = Math.floor(rand() * 256);
+      noiseG[i] = Math.floor(rand() * 256);
+      noiseB[i] = Math.floor(rand() * 256);
+    }
+
+    // --- Per-pixel random offset for denoising variation ---
+    const pixelRandOffset = new Float32Array(RES * RES);
+    for (let i = 0; i < RES * RES; i++) {
+      pixelRandOffset[i] = rand() * 0.3; // up to 0.3 random variation
+    }
+
+    // --- Pre-compute step frames as ImageData ---
+    const offscreen = document.createElement('canvas');
+    offscreen.width = RES;
+    offscreen.height = RES;
+    const offCtx = offscreen.getContext('2d')!;
+    const stepFrames: ImageData[] = [];
+
+    for (let step = 0; step < STEPS; step++) {
+      const imageData = offCtx.createImageData(RES, RES);
+      const data = imageData.data;
+      const t = step / (STEPS - 1); // 0 = noise, 1 = final
+
+      for (let y = 0; y < RES; y++) {
+        for (let x = 0; x < RES; x++) {
+          const idx = y * RES + x;
+          const px = idx * 4;
+          const i3 = idx * 3;
+
+          if (step === 0) {
+            // Pure noise
+            data[px] = noiseR[idx];
+            data[px + 1] = noiseG[idx];
+            data[px + 2] = noiseB[idx];
+            data[px + 3] = 255;
+          } else if (step === STEPS - 1) {
+            // Final clean image
+            data[px] = targetImage[i3];
+            data[px + 1] = targetImage[i3 + 1];
+            data[px + 2] = targetImage[i3 + 2];
+            data[px + 3] = 255;
+          } else {
+            // Intermediate: center-outward denoising with per-pixel variation
+            // Pixels closer to center denoise faster
+            // denoiseFactor: 0 = fully noise, 1 = fully target
+            const dist = distMap[idx];
+            const randOff = pixelRandOffset[idx];
+
+            // Spatial coherence: center pixels resolve first
+            // Use a sigmoid-like curve centered around the current step progress
+            // adjusted by distance from center
+            const adjustedT = t * 1.4 - dist * 0.6 - randOff;
+            const denoiseFactor = Math.max(0, Math.min(1, adjustedT * 1.8));
+
+            // Lerp between noise and target
+            const nr = noiseR[idx];
+            const ng = noiseG[idx];
+            const nb = noiseB[idx];
+            const tr = targetImage[i3];
+            const tg = targetImage[i3 + 1];
+            const tb = targetImage[i3 + 2];
+
+            data[px] = Math.round(nr + (tr - nr) * denoiseFactor);
+            data[px + 1] = Math.round(ng + (tg - ng) * denoiseFactor);
+            data[px + 2] = Math.round(nb + (tb - nb) * denoiseFactor);
+            data[px + 3] = 255;
+          }
+        }
+      }
+
+      // Apply a blur pass for intermediate steps to simulate denoising softness
+      if (step > 0 && step < STEPS - 1) {
+        // Simple box blur: average with neighbors
+        const blurStrength = Math.max(0, 1 - t); // stronger blur at earlier steps
+        if (blurStrength > 0.1) {
+          const src = new Uint8ClampedArray(data);
+          for (let y = 1; y < RES - 1; y++) {
+            for (let x = 1; x < RES - 1; x++) {
+              const px = (y * RES + x) * 4;
+              for (let c = 0; c < 3; c++) {
+                const center = src[px + c];
+                const top = src[((y - 1) * RES + x) * 4 + c];
+                const bot = src[((y + 1) * RES + x) * 4 + c];
+                const left = src[(y * RES + (x - 1)) * 4 + c];
+                const right = src[(y * RES + (x + 1)) * 4 + c];
+                const avg = (top + bot + left + right) / 4;
+                data[px + c] = Math.round(center + (avg - center) * blurStrength * 0.5);
+              }
+            }
+          }
+        }
+      }
+
+      stepFrames.push(imageData);
+    }
+
+    // --- Set up visible canvas ---
+    const canvas = document.getElementById('diffusion-canvas') as HTMLCanvasElement | null;
+    if (!canvas) return;
+
+    canvas.width = RES;
+    canvas.height = RES;
+    const ctx = canvas.getContext('2d')!;
+
+    // Draw initial frame
+    ctx.putImageData(stepFrames[0], 0, 0);
+
+    // --- UI state management ---
     const section = document.getElementById('diffusion-section');
     if (!section) return;
 
-    const STEPS = 7;
     let currentStep = 0;
 
-    const grids = section.querySelectorAll('.diff-grid-svg');
     const dots = section.querySelectorAll('.diff-step-dot');
     const stepLabel = section.querySelector('[data-diff="step-label"]');
     const progressFill = section.querySelector('[data-diff="progress-fill"]') as HTMLElement;
     const explanations = section.querySelectorAll('.diff-step-explanation');
 
-    const stepLabels = [
+    const stepLabelsText = [
       'Step 0: Pure noise',
       'Step 1: Faint structure',
       'Step 2: Shapes emerge',
@@ -527,104 +586,69 @@ const stepLabels = [
     ];
 
     function setStep(step: number) {
-      if (step === currentStep) return;
-      const clampedStep = Math.max(0, Math.min(step, STEPS - 1));
+      const s = Math.max(0, Math.min(step, STEPS - 1));
+      if (s === currentStep) return;
+      currentStep = s;
 
-      // Update grids
-      grids.forEach((g, i) => {
-        g.classList.toggle('active', i === clampedStep);
-      });
+      // Draw the pre-computed frame
+      ctx.putImageData(stepFrames[s], 0, 0);
 
       // Update dots
       dots.forEach((d, i) => {
-        d.classList.toggle('active', i === clampedStep);
-        d.classList.toggle('completed', i < clampedStep);
+        d.classList.toggle('active', i === s);
+        d.classList.toggle('completed', i < s);
       });
 
       // Update label
-      if (stepLabel) {
-        stepLabel.textContent = stepLabels[clampedStep];
-      }
+      if (stepLabel) stepLabel.textContent = stepLabelsText[s];
 
       // Update progress bar
-      if (progressFill) {
-        const pct = (clampedStep / (STEPS - 1)) * 100;
-        progressFill.style.width = `${pct}%`;
-      }
+      if (progressFill) progressFill.style.width = `${(s / (STEPS - 1)) * 100}%`;
 
       // Update explanations
-      explanations.forEach((e, i) => {
-        e.classList.toggle('active', i === clampedStep);
+      explanations.forEach((e, i) => e.classList.toggle('active', i === s));
+    }
+
+    // Click dots to jump
+    dots.forEach((dot, i) => dot.addEventListener('click', () => setStep(i)));
+
+    // --- ScrollTrigger integration ---
+    const gsap = (window as any).gsap;
+    const ScrollTrigger = (window as any).ScrollTrigger;
+
+    if (!gsap || !ScrollTrigger) {
+      // Fallback: show final image and all explanations visible
+      ctx.putImageData(stepFrames[STEPS - 1], 0, 0);
+      explanations.forEach(el => {
+        (el as HTMLElement).style.opacity = '1';
+        (el as HTMLElement).style.position = 'relative';
       });
-
-      currentStep = clampedStep;
+      return;
     }
 
-    // Allow clicking dots to jump to a step (non-scroll interaction)
-    dots.forEach((dot, i) => {
-      dot.addEventListener('click', () => setStep(i));
+    ScrollTrigger.create({
+      trigger: section,
+      start: 'top top',
+      end: '+=350%',
+      pin: true,
+      anticipatePin: 1,
+      onUpdate: (self: any) => {
+        const progress = self.progress; // 0 to 1
+        // First 15% of scroll: show step 0
+        // Remaining 85%: distribute across steps 0-6
+        if (progress < 0.15) {
+          setStep(0);
+        } else {
+          const stepProgress = (progress - 0.15) / 0.85;
+          const step = Math.floor(stepProgress * STEPS);
+          setStep(Math.min(step, STEPS - 1));
+        }
+      },
     });
-
-    // Create pinned scroll timeline
-    const tl = gsap.timeline({
-      scrollTrigger: {
-        trigger: section,
-        start: 'top top',
-        end: '+=300%',
-        pin: true,
-        scrub: 1,
-        anticipatePin: 1,
-      }
-    });
-
-    // Phase 1: Fade in heading and description
-    tl.fromTo(
-      section.querySelector('[data-diff="heading"]'),
-      { opacity: 0, y: 20 },
-      { opacity: 1, y: 0, duration: 0.3 },
-      0
-    );
-    tl.fromTo(
-      section.querySelector('[data-diff="desc"]'),
-      { opacity: 0, y: 15 },
-      { opacity: 1, y: 0, duration: 0.3 },
-      0.1
-    );
-
-    // Phase 2: Fade in prompt
-    tl.fromTo(
-      section.querySelector('[data-diff="prompt"]'),
-      { opacity: 0, y: 10 },
-      { opacity: 1, y: 0, duration: 0.3 },
-      0.25
-    );
-
-    // Phase 3: Fade in the viz controls area
-    tl.fromTo(
-      section.querySelector('[data-diff="step-indicator"]'),
-      { opacity: 0 },
-      { opacity: 1, duration: 0.2 },
-      0.4
-    );
-
-    // Phase 4: Step through denoising stages
-    // Each step gets an equal portion of the remaining timeline
-    const stepStart = 0.6;
-    const stepDuration = (4.0 - stepStart) / STEPS;
-
-    for (let s = 0; s < STEPS; s++) {
-      const t = stepStart + s * stepDuration;
-      tl.call(() => setStep(s), [], t);
-    }
-
-    // Ensure first step is set
-    setStep(0);
   }
 
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
-      requestAnimationFrame(initDiffusionViz);
-    });
+    document.addEventListener('DOMContentLoaded', () => requestAnimationFrame(initDiffusionViz));
   } else {
     requestAnimationFrame(initDiffusionViz);
   }

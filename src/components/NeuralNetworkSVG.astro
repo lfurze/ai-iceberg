@@ -544,11 +544,15 @@
    * NeuralNetworkSVG scroll animation orchestration.
    * Relies on gsap + ScrollTrigger being registered globally by Layout.astro.
    *
-   * Animation sequence:
-   * 1. Black box overlay fades out
-   * 2. Layers reveal bottom-to-top (input -> embedding -> block1 -> block2 -> output)
-   * 3. Data flow pulses travel upward through the network
-   * 4. Output probability bars animate in
+   * Uses ScrollTrigger.create + onUpdate with progress-based phase mapping
+   * instead of scrubbed timeline with tl.call() (which doesn't reliably fire).
+   *
+   * Progress phases (0-1):
+   *   0.00 - 0.10  Heading + description fade in
+   *   0.10 - 0.25  Black box dissolves
+   *   0.25 - 0.75  Layers reveal bottom-to-top (input, embedding, t1, t2, output)
+   *   0.75 - 0.90  Output probability bars + connection line appear
+   *   0.90 - 1.00  Data flow pulses start playing
    */
   function initNeuralNetwork() {
     const gsap = (window as any).gsap;
@@ -558,86 +562,47 @@
     const section = document.getElementById('neural-network-section');
     if (!section) return;
 
+    const heading = section.querySelector('[data-nn="heading"]') as HTMLElement;
+    const desc = section.querySelector('[data-nn="desc"]') as HTMLElement;
     const blackbox = section.querySelector('[data-nn="blackbox"]') as HTMLElement;
-    const layers = section.querySelectorAll('.nn-layer');
     const probBars = section.querySelectorAll('[data-nn-prob]');
     const probTexts = section.querySelectorAll('.nn-prob-text');
     const probHeading = section.querySelector('.nn-prob-heading');
     const outputConn = section.querySelector('.nn-output-conn');
     const pulses = section.querySelectorAll('.nn-pulse');
 
-    // Create main timeline pinned to the section
-    const tl = gsap.timeline({
-      scrollTrigger: {
-        trigger: section,
-        start: 'top top',
-        end: '+=250%',
-        pin: true,
-        scrub: 1,
-        anticipatePin: 1,
-      }
-    });
-
-    // Phase 1: Fade heading and description in
-    tl.fromTo(
-      section.querySelector('[data-nn="heading"]'),
-      { opacity: 0, y: 20 },
-      { opacity: 1, y: 0, duration: 0.5 },
-      0
-    );
-    tl.fromTo(
-      section.querySelector('[data-nn="desc"]'),
-      { opacity: 0, y: 15 },
-      { opacity: 1, y: 0, duration: 0.5 },
-      0.15
-    );
-
-    // Phase 2: Black box dissolves
-    tl.to(blackbox, {
-      opacity: 0,
-      duration: 0.8,
-      ease: 'power2.inOut',
-      onComplete: () => { blackbox.style.pointerEvents = 'none'; },
-    }, 0.6);
-
-    // Phase 3: Reveal layers bottom to top
     const layerOrder = ['input', 'embedding', 'transformer-1', 'transformer-2', 'output'];
-    layerOrder.forEach((layerName, i) => {
-      const layerEls = section.querySelectorAll(`[data-nn-layer="${layerName}"]`);
-      tl.to(layerEls, {
-        opacity: 1,
-        duration: 0.5,
-        stagger: 0.05,
-        ease: 'power2.out',
-      }, 1.2 + i * 0.35);
-    });
 
-    // Phase 4: Output probability bars
-    tl.to(outputConn, { opacity: 1, duration: 0.3 }, 3.2);
-    tl.to(probHeading, { opacity: 1, duration: 0.3 }, 3.3);
-    probBars.forEach((bar, i) => {
-      tl.to(bar, {
-        opacity: 1,
-        duration: 0.3,
-        ease: 'power2.out',
-      }, 3.4 + i * 0.1);
-    });
-    probTexts.forEach((txt, i) => {
-      tl.to(txt, {
-        opacity: 1,
-        duration: 0.3,
-      }, 3.5 + i * 0.1);
-    });
+    // State tracker to avoid redundant gsap.to() calls
+    const reached: Record<string, boolean> = {};
 
-    // Phase 5: Data flow pulses
-    // Define a path from bottom to top
+    function once(key: string, fn: () => void) {
+      if (!reached[key]) {
+        reached[key] = true;
+        fn();
+      }
+    }
+
+    function unonce(key: string, fn: () => void) {
+      if (reached[key]) {
+        reached[key] = false;
+        fn();
+      }
+    }
+
+    // Set initial states (hidden)
+    gsap.set([heading, desc], { opacity: 0, y: 20 });
+    gsap.set(blackbox, { opacity: 1 });
+    blackbox.style.pointerEvents = 'auto';
+
+    // Build repeating pulse timelines (paused initially)
     const pulsePathY = [486, 430, 367, 304, 217, 154, 68];
-    const pulsePathX = [45, 105, 165]; // Three token lanes
+    const pulsePathX = [45, 105, 165];
+    const pulseTimelines: any[] = [];
 
     pulses.forEach((pulse, i) => {
       const xPos = pulsePathX[i] || pulsePathX[0];
-      // Animate pulse traveling upward
-      const pulseTl = gsap.timeline({ repeat: -1, delay: i * 0.6 });
+      const pulseTl = gsap.timeline({ repeat: -1, delay: i * 0.6, paused: true });
 
       pulsePathY.forEach((yPos, j) => {
         if (j === 0) {
@@ -651,10 +616,143 @@
         }
       });
       pulseTl.to(pulse, { opacity: 0, duration: 0.2 });
+      pulseTimelines.push(pulseTl);
+    });
 
-      // Only play pulses after the network is revealed
-      pulseTl.pause();
-      tl.call(() => pulseTl.play(), [], 3.8);
+    ScrollTrigger.create({
+      trigger: section,
+      start: 'top top',
+      end: '+=250%',
+      pin: true,
+      anticipatePin: 1,
+      onUpdate: (self: any) => {
+        const p = self.progress; // 0 to 1
+
+        // --- Phase 1: heading + description (0.00 - 0.10) ---
+        if (p >= 0.02) {
+          once('heading', () => {
+            gsap.to(heading, { opacity: 1, y: 0, duration: 0.5, ease: 'power2.out' });
+          });
+        } else {
+          unonce('heading', () => {
+            gsap.to(heading, { opacity: 0, y: 20, duration: 0.3 });
+          });
+        }
+
+        if (p >= 0.05) {
+          once('desc', () => {
+            gsap.to(desc, { opacity: 1, y: 0, duration: 0.5, ease: 'power2.out' });
+          });
+        } else {
+          unonce('desc', () => {
+            gsap.to(desc, { opacity: 0, y: 20, duration: 0.3 });
+          });
+        }
+
+        // --- Phase 2: black box dissolves (0.10 - 0.25) ---
+        if (p >= 0.10) {
+          once('blackbox', () => {
+            gsap.to(blackbox, {
+              opacity: 0,
+              duration: 0.8,
+              ease: 'power2.inOut',
+              onComplete: () => { blackbox.style.pointerEvents = 'none'; },
+            });
+          });
+        } else {
+          unonce('blackbox', () => {
+            gsap.to(blackbox, {
+              opacity: 1,
+              duration: 0.4,
+              onComplete: () => { blackbox.style.pointerEvents = 'auto'; },
+            });
+          });
+        }
+
+        // --- Phase 3: layers reveal bottom-to-top (0.25 - 0.75) ---
+        // Each layer gets an equal slice of the 0.25-0.75 range
+        const layerStart = 0.25;
+        const layerEnd = 0.75;
+        const layerRange = layerEnd - layerStart;
+        const layerSlice = layerRange / layerOrder.length;
+
+        layerOrder.forEach((layerName, i) => {
+          const threshold = layerStart + i * layerSlice;
+          const key = `layer-${layerName}`;
+          const layerEls = section.querySelectorAll(`[data-nn-layer="${layerName}"]`);
+
+          if (p >= threshold) {
+            once(key, () => {
+              gsap.to(layerEls, {
+                opacity: 1,
+                duration: 0.5,
+                stagger: 0.05,
+                ease: 'power2.out',
+              });
+            });
+          } else {
+            unonce(key, () => {
+              gsap.to(layerEls, { opacity: 0, duration: 0.3 });
+            });
+          }
+        });
+
+        // --- Phase 4: output probabilities (0.75 - 0.90) ---
+        if (p >= 0.75) {
+          once('output-conn', () => {
+            gsap.to(outputConn, { opacity: 1, duration: 0.4, ease: 'power2.out' });
+          });
+        } else {
+          unonce('output-conn', () => {
+            gsap.to(outputConn, { opacity: 0, duration: 0.3 });
+          });
+        }
+
+        if (p >= 0.78) {
+          once('prob-heading', () => {
+            gsap.to(probHeading, { opacity: 1, duration: 0.4, ease: 'power2.out' });
+          });
+        } else {
+          unonce('prob-heading', () => {
+            gsap.to(probHeading, { opacity: 0, duration: 0.3 });
+          });
+        }
+
+        if (p >= 0.80) {
+          once('prob-bars', () => {
+            gsap.to(probBars, { opacity: 1, duration: 0.4, stagger: 0.08, ease: 'power2.out' });
+          });
+        } else {
+          unonce('prob-bars', () => {
+            gsap.to(probBars, { opacity: 0, duration: 0.3 });
+          });
+        }
+
+        if (p >= 0.83) {
+          once('prob-texts', () => {
+            gsap.to(probTexts, { opacity: 1, duration: 0.4, stagger: 0.08 });
+          });
+        } else {
+          unonce('prob-texts', () => {
+            gsap.to(probTexts, { opacity: 0, duration: 0.3 });
+          });
+        }
+
+        // --- Phase 5: data flow pulses (0.90+) ---
+        if (p >= 0.90) {
+          once('pulses', () => {
+            pulseTimelines.forEach((ptl) => ptl.play());
+          });
+        } else {
+          unonce('pulses', () => {
+            pulseTimelines.forEach((ptl) => {
+              ptl.pause();
+              ptl.progress(0);
+            });
+            gsap.set(pulses, { opacity: 0 });
+          });
+        }
+      },
     });
   }
 

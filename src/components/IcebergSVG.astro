@@ -2,48 +2,34 @@
 /**
  * IcebergSVG.astro
  * Central programmatic SVG iceberg visualization — the narrative spine.
+ * Angular, crystalline low-poly design with faceted geometry.
  * Three layers: Snowman (Applications), Ice above waterline (LLM), Underwater bulk (Dataset).
  * Extended elements: Ocean + Sharks (threats).
- * Designed for GSAP ScrollTrigger orchestration from the main page.
+ * Compact viewBox (800x650) to fit within a viewport-height sticky container.
  */
 ---
 
 <div class="iceberg-wrapper" id="iceberg-wrapper">
   <svg
     id="iceberg-svg"
-    viewBox="0 0 800 1200"
+    viewBox="0 0 800 650"
     preserveAspectRatio="xMidYMid meet"
     xmlns="http://www.w3.org/2000/svg"
     role="img"
     aria-label="The AI Iceberg: a three-layer model showing Applications (snowman) above the waterline, the LLM (visible ice), and the massive Dataset (hidden underwater bulk)"
   >
     <defs>
-      <!-- Gradient for sky -->
+      <!-- Sky gradient: near-black -->
       <linearGradient id="sky-gradient" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="#0a0a1a" />
-        <stop offset="100%" stop-color="#0d1525" />
+        <stop offset="0%" stop-color="#06060f" />
+        <stop offset="100%" stop-color="#0a1020" />
       </linearGradient>
 
-      <!-- Gradient for ice above water -->
-      <linearGradient id="ice-above-gradient" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="#e8f4f8" />
-        <stop offset="40%" stop-color="#c5dfe8" />
-        <stop offset="100%" stop-color="#a8d0e0" />
-      </linearGradient>
-
-      <!-- Gradient for ice below water -->
-      <linearGradient id="ice-below-gradient" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="#6ba8c4" />
-        <stop offset="30%" stop-color="#3d7a99" />
-        <stop offset="70%" stop-color="#1e4d6e" />
-        <stop offset="100%" stop-color="#0c2d45" />
-      </linearGradient>
-
-      <!-- Ocean water gradient -->
+      <!-- Ocean gradient: dark navy to abyss -->
       <linearGradient id="ocean-gradient" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="#0b2a42" />
-        <stop offset="40%" stop-color="#071e33" />
-        <stop offset="100%" stop-color="#030f1a" />
+        <stop offset="0%" stop-color="#0a2238" />
+        <stop offset="35%" stop-color="#061829" />
+        <stop offset="100%" stop-color="#020c16" />
       </linearGradient>
 
       <!-- Glow filter for labels -->
@@ -55,391 +41,272 @@
         </feMerge>
       </filter>
 
-      <!-- Subtle glow for snowman -->
-      <filter id="soft-glow" x="-10%" y="-10%" width="120%" height="120%">
-        <feGaussianBlur stdDeviation="2" result="blur" />
+      <!-- Subtle inner glow for underwater ice edge -->
+      <filter id="ice-glow" x="-10%" y="-10%" width="120%" height="120%">
+        <feGaussianBlur stdDeviation="6" result="blur" />
         <feMerge>
           <feMergeNode in="blur" />
           <feMergeNode in="SourceGraphic" />
         </feMerge>
       </filter>
-
-      <!-- Underwater caustic light pattern -->
-      <filter id="caustics">
-        <feTurbulence type="fractalNoise" baseFrequency="0.015" numOctaves="2" seed="3" result="noise" />
-        <feDisplacementMap in="SourceGraphic" in2="noise" scale="6" />
-      </filter>
-
-      <!-- Clip path for underwater region -->
-      <clipPath id="underwater-clip">
-        <rect x="0" y="420" width="800" height="780" />
-      </clipPath>
     </defs>
 
-    <!-- ============================================ -->
-    <!-- BACKGROUND: Sky + Ocean                      -->
-    <!-- ============================================ -->
+    <!-- ========================================= -->
+    <!-- BACKGROUND: Sky + Ocean                   -->
+    <!-- ========================================= -->
     <g id="iceberg-background">
-      <!-- Sky -->
-      <rect x="0" y="0" width="800" height="420" fill="url(#sky-gradient)" />
+      <rect x="0" y="0" width="800" height="250" fill="url(#sky-gradient)" />
+      <rect x="0" y="250" width="800" height="400" fill="url(#ocean-gradient)" />
 
-      <!-- Ocean body -->
-      <rect x="0" y="420" width="800" height="780" fill="url(#ocean-gradient)" />
-
-      <!-- Subtle caustic light ripples in water -->
-      <g class="caustic-lights" opacity="0.04">
-        <ellipse cx="300" cy="600" rx="120" ry="15" fill="#38bdf8" />
-        <ellipse cx="550" cy="700" rx="90" ry="12" fill="#0ea5e9" />
-        <ellipse cx="200" cy="850" rx="100" ry="10" fill="#38bdf8" />
-        <ellipse cx="600" cy="950" rx="80" ry="8" fill="#0ea5e9" />
+      <!-- Subtle caustic light patches in the deep water -->
+      <g class="caustic-lights" opacity="0.035">
+        <ellipse cx="220" cy="390" rx="110" ry="10" fill="#38bdf8" />
+        <ellipse cx="600" cy="460" rx="90" ry="8" fill="#0ea5e9" />
+        <ellipse cx="160" cy="540" rx="80" ry="7" fill="#38bdf8" />
+        <ellipse cx="650" cy="560" rx="70" ry="6" fill="#0ea5e9" />
       </g>
     </g>
 
-    <!-- ============================================ -->
-    <!-- LAYER 3 (bottom): DATASET — Underwater bulk  -->
-    <!-- ============================================ -->
+    <!-- ========================================= -->
+    <!-- LAYER 1 (bottom): DATASET — Underwater    -->
+    <!-- Massive angular crystalline bulk           -->
+    <!-- ========================================= -->
     <g id="iceberg-dataset" class="iceberg-layer" data-layer="dataset">
-      <!-- Massive underwater ice body -->
-      <path
-        id="ice-underwater"
-        d="
-          M 280,420
-          C 220,440 140,500 120,580
-          C 100,660 90,740 110,820
-          C 130,900 160,960 200,1020
-          C 240,1080 300,1120 400,1140
-          C 500,1120 560,1080 600,1020
-          C 640,960 670,900 690,820
-          C 710,740 700,660 680,580
-          C 660,500 580,440 520,420
-          Z
-        "
-        fill="url(#ice-below-gradient)"
-        opacity="0.92"
-      />
 
-      <!-- Subtle texture lines on underwater ice -->
-      <g class="ice-texture-underwater" opacity="0.12">
-        <path d="M 200,600 Q 350,580 500,610" stroke="#a8d0e0" stroke-width="1" fill="none" />
-        <path d="M 160,700 Q 350,680 620,720" stroke="#a8d0e0" stroke-width="0.8" fill="none" />
-        <path d="M 180,800 Q 400,790 640,810" stroke="#a8d0e0" stroke-width="0.6" fill="none" />
-        <path d="M 220,900 Q 380,885 580,910" stroke="#a8d0e0" stroke-width="0.5" fill="none" />
-        <path d="M 280,1000 Q 400,990 520,1010" stroke="#a8d0e0" stroke-width="0.4" fill="none" />
+      <!-- Outer silhouette: single path for the full underwater mass -->
+      <!-- Widest point ~130..670, bottom jagged edge around y=605 -->
+
+      <!-- Back facets (darker, furthest from viewer) -->
+      <polygon points="310,250 250,310 190,400 210,340" fill="#133a56" />
+      <polygon points="490,250 560,320 610,410 590,340" fill="#123550" />
+      <polygon points="190,400 170,470 210,520 250,430" fill="#0e2d46" />
+      <polygon points="610,410 640,480 620,530 590,450" fill="#0d2a42" />
+
+      <!-- Main underwater body — large angular facets -->
+      <!-- Left shoulder -->
+      <polygon points="310,250 250,310 210,340 280,270" fill="#1a4d6e" />
+      <polygon points="280,270 210,340 190,400 250,430 290,330" fill="#17476a" />
+      <polygon points="290,330 250,430 230,500 310,460 340,370" fill="#144265" />
+
+      <!-- Left lower -->
+      <polygon points="250,430 190,400 170,470 210,520 250,490" fill="#113b5c" />
+      <polygon points="250,490 210,520 200,570 260,580 300,530" fill="#0e3454" />
+      <polygon points="300,530 260,580 310,605 370,570 350,500" fill="#0c2e4c" />
+
+      <!-- Center mass -->
+      <polygon points="340,370 310,460 350,500 400,430 390,350" fill="#185577" />
+      <polygon points="390,350 400,430 450,460 470,370" fill="#1b5a7c" />
+      <polygon points="350,500 370,570 430,590 460,530 400,430" fill="#144a6c" />
+      <polygon points="400,430 460,530 500,500 470,400" fill="#16506f" />
+
+      <!-- Right shoulder -->
+      <polygon points="490,250 520,280 560,320 540,290" fill="#19506e" />
+      <polygon points="520,280 560,320 590,340 610,410 550,350" fill="#164968" />
+      <polygon points="470,370 550,350 610,410 590,450 510,400" fill="#144465" />
+
+      <!-- Right lower -->
+      <polygon points="590,450 640,480 620,530 570,500" fill="#103d5c" />
+      <polygon points="510,400 590,450 570,500 530,520 470,460" fill="#123f5e" />
+      <polygon points="470,460 530,520 510,570 440,580 430,520" fill="#0e3654" />
+      <polygon points="530,520 570,500 550,570 510,590 510,570" fill="#0c304e" />
+
+      <!-- Bottom jagged edge facets -->
+      <polygon points="260,580 310,605 340,598 300,560" fill="#092844" />
+      <polygon points="310,605 370,615 430,610 370,570" fill="#0a2b48" />
+      <polygon points="430,610 500,605 510,590 440,580" fill="#092742" />
+      <polygon points="500,605 550,570 530,560 510,590" fill="#08233e" />
+      <polygon points="200,570 260,580 240,598 185,580" fill="#082240" />
+      <polygon points="550,570 600,550 580,570 550,590" fill="#07203c" />
+
+      <!-- Highlight edges — subtle lighter strokes on key facets for crystalline feel -->
+      <g opacity="0.12">
+        <line x1="310" y1="250" x2="250" y2="310" stroke="#a8d0e0" stroke-width="0.7" />
+        <line x1="490" y1="250" x2="560" y2="320" stroke="#a8d0e0" stroke-width="0.7" />
+        <line x1="250" y1="310" x2="190" y2="400" stroke="#7cbdd5" stroke-width="0.5" />
+        <line x1="560" y1="320" x2="610" y2="410" stroke="#7cbdd5" stroke-width="0.5" />
+        <line x1="340" y1="370" x2="400" y2="430" stroke="#8fc8dc" stroke-width="0.6" />
+        <line x1="470" y1="370" x2="400" y2="430" stroke="#8fc8dc" stroke-width="0.6" />
+        <line x1="400" y1="430" x2="370" y2="570" stroke="#6badc5" stroke-width="0.4" />
+        <line x1="400" y1="430" x2="460" y2="530" stroke="#6badc5" stroke-width="0.4" />
+        <line x1="310" y1="605" x2="370" y2="615" stroke="#5a9ab5" stroke-width="0.3" />
+        <line x1="430" y1="610" x2="500" y2="605" stroke="#5a9ab5" stroke-width="0.3" />
       </g>
 
-      <!-- Dataset label -->
+      <!-- Dataset label — starts hidden -->
       <g id="label-dataset" class="iceberg-label" opacity="0">
-        <text
-          x="400"
-          y="780"
-          text-anchor="middle"
-          class="label-title"
-          fill="#38bdf8"
-          filter="url(#glow)"
-        >The Dataset</text>
-        <text
-          x="400"
-          y="810"
-          text-anchor="middle"
-          class="label-subtitle"
-          fill="#7dd3fc"
-        >~13 trillion tokens of training data</text>
-        <text
-          x="400"
-          y="835"
-          text-anchor="middle"
-          class="label-detail"
-          fill="#5eadd0"
-        >Common Crawl, Wikipedia, GitHub, books, web pages</text>
+        <text x="400" y="460" text-anchor="middle" class="label-title" fill="#38bdf8" filter="url(#glow)">The Dataset</text>
+        <text x="400" y="485" text-anchor="middle" class="label-subtitle" fill="#7dd3fc">~13 trillion tokens of training data</text>
+        <text x="400" y="505" text-anchor="middle" class="label-detail" fill="#5eadd0">Common Crawl, Wikipedia, GitHub, books, web pages</text>
       </g>
     </g>
 
-    <!-- ============================================ -->
-    <!-- SHARKS — Threats in the water                -->
-    <!-- ============================================ -->
+    <!-- ========================================= -->
+    <!-- SHARKS — Threats in the water             -->
+    <!-- ========================================= -->
     <g id="iceberg-sharks" class="shark-group" opacity="0.35">
-      <!-- Shark 1: left side, cruising -->
-      <g class="shark" id="shark-1" transform="translate(60, 650)">
-        <path
-          d="M 0,0 L 30,-12 L 50,-4 L 60,0 L 50,4 L 30,6 L 0,0 Z"
-          fill="#1a3a52"
-          stroke="#2a5a7a"
-          stroke-width="0.5"
-        />
-        <!-- Dorsal fin -->
-        <path d="M 28,-4 L 32,-18 L 38,-4" fill="#1a3a52" stroke="#2a5a7a" stroke-width="0.5" />
+      <!-- Outer <g> holds SVG position; inner .shark <g> carries CSS animation -->
+      <g transform="translate(65, 400)">
+        <g class="shark" id="shark-1">
+          <path d="M 0,0 L 25,-10 L 42,-3 L 50,0 L 42,3 L 25,5 L 0,0 Z" fill="#14304a" stroke="#1f5070" stroke-width="0.5" />
+          <path d="M 23,-3 L 26,-14 L 32,-3" fill="#14304a" stroke="#1f5070" stroke-width="0.5" />
+        </g>
       </g>
-
-      <!-- Shark 2: right side, opposite direction -->
-      <g class="shark" id="shark-2" transform="translate(680, 900) scale(-1,1)">
-        <path
-          d="M 0,0 L 30,-10 L 48,-3 L 55,0 L 48,3 L 30,5 L 0,0 Z"
-          fill="#152e42"
-          stroke="#24506e"
-          stroke-width="0.5"
-        />
-        <path d="M 26,-3 L 30,-15 L 36,-3" fill="#152e42" stroke="#24506e" stroke-width="0.5" />
+      <g transform="translate(700, 520) scale(-1,1)">
+        <g class="shark" id="shark-2">
+          <path d="M 0,0 L 25,-8 L 40,-2 L 45,0 L 40,2 L 25,4 L 0,0 Z" fill="#10283e" stroke="#1a4462" stroke-width="0.5" />
+          <path d="M 22,-2 L 25,-12 L 30,-2" fill="#10283e" stroke="#1a4462" stroke-width="0.5" />
+        </g>
       </g>
-
-      <!-- Shark 3: deep, smaller -->
-      <g class="shark" id="shark-3" transform="translate(350, 1060)">
-        <path
-          d="M 0,0 L 20,-8 L 35,-2 L 40,0 L 35,2 L 20,4 L 0,0 Z"
-          fill="#0f2233"
-          stroke="#1d4460"
-          stroke-width="0.5"
-        />
-        <path d="M 18,-2 L 21,-12 L 26,-2" fill="#0f2233" stroke="#1d4460" stroke-width="0.5" />
+      <g transform="translate(340, 600)">
+        <g class="shark" id="shark-3">
+          <path d="M 0,0 L 18,-7 L 30,-2 L 35,0 L 30,2 L 18,3 L 0,0 Z" fill="#0b1f32" stroke="#163c58" stroke-width="0.5" />
+          <path d="M 16,-2 L 18,-10 L 23,-2" fill="#0b1f32" stroke="#163c58" stroke-width="0.5" />
+        </g>
       </g>
-
-      <!-- Shark labels (hidden, revealable) -->
       <g id="shark-labels" opacity="0">
-        <text x="100" y="640" fill="#f87171" font-size="11" class="shark-label">Bias</text>
-        <text x="640" y="890" fill="#f87171" font-size="11" class="shark-label">Misinformation</text>
-        <text x="340" y="1050" fill="#f87171" font-size="11" class="shark-label">Privacy</text>
+        <text x="95" y="390" fill="#f87171" font-size="11" class="shark-label">Bias</text>
+        <text x="650" y="510" fill="#f87171" font-size="11" class="shark-label">Misinformation</text>
+        <text x="330" y="593" fill="#f87171" font-size="11" class="shark-label">Privacy</text>
       </g>
     </g>
 
-    <!-- ============================================ -->
-    <!-- WATERLINE                                    -->
-    <!-- ============================================ -->
+    <!-- ========================================= -->
+    <!-- WATERLINE — Wave animation at y=250       -->
+    <!-- ========================================= -->
     <g id="iceberg-waterline">
-      <!-- Animated wave paths -->
       <path
         id="wave-back"
         class="wave"
-        d="M 0,420 Q 100,412 200,420 Q 300,428 400,420 Q 500,412 600,420 Q 700,428 800,420 L 800,430 Q 700,438 600,430 Q 500,422 400,430 Q 300,438 200,430 Q 100,422 0,430 Z"
+        d="M 0,250 Q 100,243 200,250 Q 300,257 400,250 Q 500,243 600,250 Q 700,257 800,250 L 800,258 Q 700,265 600,258 Q 500,251 400,258 Q 300,265 200,258 Q 100,251 0,258 Z"
         fill="#0d3555"
-        opacity="0.6"
+        opacity="0.5"
       />
       <path
         id="wave-front"
         class="wave"
-        d="M 0,420 Q 100,414 200,420 Q 300,426 400,420 Q 500,414 600,420 Q 700,426 800,420 L 800,428 Q 700,434 600,428 Q 500,422 400,428 Q 300,434 200,428 Q 100,422 0,428 Z"
+        d="M 0,250 Q 100,244 200,250 Q 300,256 400,250 Q 500,244 600,250 Q 700,256 800,250 L 800,256 Q 700,262 600,256 Q 500,250 400,256 Q 300,262 200,256 Q 100,250 0,256 Z"
         fill="#134468"
-        opacity="0.5"
+        opacity="0.45"
       />
     </g>
 
-    <!-- ============================================ -->
-    <!-- LAYER 2 (middle): LLM — Above waterline ice  -->
-    <!-- ============================================ -->
+    <!-- ========================================= -->
+    <!-- LAYER 2 (middle): LLM — Above waterline   -->
+    <!-- Angular crystalline peak                   -->
+    <!-- ========================================= -->
     <g id="iceberg-llm" class="iceberg-layer" data-layer="llm">
-      <!-- Visible ice above water -->
-      <path
-        id="ice-above"
-        d="
-          M 280,420
-          C 270,410 260,390 265,370
-          C 270,350 280,330 290,315
-          C 300,300 320,280 340,270
-          C 360,260 380,258 400,258
-          C 420,258 440,260 460,270
-          C 480,280 500,300 510,315
-          C 520,330 530,350 535,370
-          C 540,390 530,410 520,420
-          Z
-        "
-        fill="url(#ice-above-gradient)"
-      />
 
-      <!-- Ice texture lines above water -->
-      <g class="ice-texture-above" opacity="0.2">
-        <path d="M 310,380 Q 400,370 490,385" stroke="#4a90a8" stroke-width="0.8" fill="none" />
-        <path d="M 320,350 Q 400,340 480,355" stroke="#4a90a8" stroke-width="0.6" fill="none" />
-        <path d="M 340,320 Q 400,312 460,322" stroke="#4a90a8" stroke-width="0.5" fill="none" />
+      <!-- Above-water faceted ice: tall angular peak, asymmetric, crystalline -->
+      <!-- The peak leans slightly left for natural asymmetry -->
+      <!-- Peak apex around y=100, waterline at y=250 -->
+
+      <!-- Left face — main large facet (slightly shadowed) -->
+      <polygon points="385,100 310,250 355,248 370,180" fill="#b8d8e8" />
+      <!-- Left face — lower triangle -->
+      <polygon points="310,250 355,248 340,250" fill="#a0c8dc" />
+
+      <!-- Front left facet -->
+      <polygon points="385,100 370,180 420,200 410,130" fill="#d4e8f0" />
+      <!-- Front center facet — brightest, catches light -->
+      <polygon points="385,100 410,130 420,200 400,250 355,248 370,180" fill="#dceef5" />
+
+      <!-- Right face — large facet -->
+      <polygon points="385,100 410,130 460,170 490,250 440,248" fill="#c4dde9" />
+      <!-- Right face — lower section -->
+      <polygon points="410,130 460,170 490,250 440,248 420,200" fill="#b0d2e2" />
+
+      <!-- Far left sliver -->
+      <polygon points="310,250 295,250 340,200 370,180" fill="#94bdd2" />
+      <polygon points="295,250 340,200 310,250" fill="#88b4ca" />
+
+      <!-- Far right sliver -->
+      <polygon points="490,250 505,250 470,195 460,170" fill="#98c0d4" />
+      <polygon points="505,250 470,195 490,250" fill="#8cb7cc" />
+
+      <!-- Highlight edges — crystalline ridgelines -->
+      <g opacity="0.25">
+        <line x1="385" y1="100" x2="370" y2="180" stroke="#ffffff" stroke-width="0.8" />
+        <line x1="385" y1="100" x2="410" y2="130" stroke="#ffffff" stroke-width="1" />
+        <line x1="410" y1="130" x2="420" y2="200" stroke="#e8f4fa" stroke-width="0.6" />
+        <line x1="370" y1="180" x2="355" y2="248" stroke="#e0eff6" stroke-width="0.5" />
+        <line x1="410" y1="130" x2="460" y2="170" stroke="#e8f4fa" stroke-width="0.7" />
+        <line x1="460" y1="170" x2="490" y2="250" stroke="#d8eaf2" stroke-width="0.5" />
       </g>
 
-      <!-- Frost/shine highlight -->
-      <path
-        d="M 330,300 Q 370,275 410,280 Q 380,290 340,310 Z"
-        fill="white"
-        opacity="0.15"
-      />
+      <!-- Very subtle specular highlight near peak -->
+      <polygon points="385,100 395,115 410,130 400,118" fill="#ffffff" opacity="0.12" />
 
-      <!-- LLM label -->
+      <!-- LLM label — starts hidden -->
       <g id="label-llm" class="iceberg-label" opacity="0">
-        <text
-          x="640"
-          y="350"
-          text-anchor="start"
-          class="label-title"
-          fill="#38bdf8"
-          filter="url(#glow)"
-        >The LLM</text>
-        <text
-          x="640"
-          y="375"
-          text-anchor="start"
-          class="label-subtitle"
-          fill="#7dd3fc"
-        >Tokenization, Weighting,</text>
-        <text
-          x="640"
-          y="395"
-          text-anchor="start"
-          class="label-subtitle"
-          fill="#7dd3fc"
-        >Attention &amp; Transformers</text>
-
-        <!-- Connector line from label to ice -->
-        <line
-          x1="540"
-          y1="360"
-          x2="635"
-          y2="360"
-          stroke="#38bdf8"
-          stroke-width="1"
-          stroke-dasharray="4 3"
-          opacity="0.5"
-        />
+        <text x="640" y="195" text-anchor="start" class="label-title" fill="#38bdf8" filter="url(#glow)">The LLM</text>
+        <text x="640" y="215" text-anchor="start" class="label-subtitle" fill="#7dd3fc">Tokenization, Weighting,</text>
+        <text x="640" y="232" text-anchor="start" class="label-subtitle" fill="#7dd3fc">Attention &amp; Transformers</text>
+        <line x1="510" y1="210" x2="635" y2="210" stroke="#38bdf8" stroke-width="1" stroke-dasharray="4 3" opacity="0.5" />
       </g>
     </g>
 
-    <!-- ============================================ -->
-    <!-- LAYER 1 (top): SNOWMAN — Applications        -->
-    <!-- ============================================ -->
+    <!-- ========================================= -->
+    <!-- LAYER 3 (top): SNOWMAN — Applications     -->
+    <!-- Sits on top of the angular peak            -->
+    <!-- ========================================= -->
     <g id="iceberg-snowman" class="iceberg-layer" data-layer="applications">
-      <!-- Shadow under snowman -->
-      <ellipse cx="400" cy="260" rx="35" ry="6" fill="#8ab8cc" opacity="0.3" />
+      <!-- Shadow on ice surface under snowman -->
+      <ellipse cx="393" cy="104" rx="20" ry="4" fill="#7cafc5" opacity="0.25" />
 
-      <!-- Bottom snowball (body) -->
-      <circle
-        id="snowman-body"
-        cx="400"
-        cy="238"
-        r="24"
-        fill="#f0f7fa"
-        stroke="#d0e4ec"
-        stroke-width="0.8"
-      />
-
-      <!-- Top snowball (head) -->
-      <circle
-        id="snowman-head"
-        cx="400"
-        cy="208"
-        r="17"
-        fill="#f5f9fb"
-        stroke="#d0e4ec"
-        stroke-width="0.8"
-      />
+      <!-- Body — slightly oval, sitting on peak -->
+      <circle id="snowman-body" cx="393" cy="88" r="16" fill="#f0f7fa" stroke="#c8dde8" stroke-width="0.7" />
+      <!-- Head -->
+      <circle id="snowman-head" cx="393" cy="68" r="11" fill="#f5f9fb" stroke="#c8dde8" stroke-width="0.7" />
 
       <!-- Eyes -->
-      <circle cx="394" cy="204" r="2" fill="#1a2332" />
-      <circle cx="406" cy="204" r="2" fill="#1a2332" />
+      <circle cx="389.5" cy="66" r="1.4" fill="#1a2332" />
+      <circle cx="396.5" cy="66" r="1.4" fill="#1a2332" />
 
-      <!-- Smile (subtle arc) -->
-      <path
-        d="M 394,211 Q 400,215 406,211"
-        stroke="#1a2332"
-        stroke-width="1.2"
-        fill="none"
-        stroke-linecap="round"
-      />
+      <!-- Smile -->
+      <path d="M 389.5,71 Q 393,74 396.5,71" stroke="#1a2332" stroke-width="0.8" fill="none" stroke-linecap="round" />
 
-      <!-- Nose (carrot) -->
-      <path
-        d="M 400,207 L 412,209 L 400,210 Z"
-        fill="#f4845f"
-      />
+      <!-- Carrot nose -->
+      <path d="M 393,68.5 L 401,69.5 L 393,70.5 Z" fill="#f4845f" />
 
       <!-- Top hat -->
-      <rect x="389" y="183" width="22" height="14" rx="1" fill="#1a2332" />
-      <rect x="385" y="195" width="30" height="3" rx="1" fill="#1a2332" />
-      <!-- Hat band -->
-      <rect x="389" y="192" width="22" height="3" fill="#38bdf8" opacity="0.7" />
+      <rect x="386" y="51" width="14" height="10" rx="1" fill="#1a2332" />
+      <rect x="383" y="59.5" width="20" height="2.5" rx="1" fill="#1a2332" />
+      <rect x="386" y="58" width="14" height="2.5" fill="#38bdf8" opacity="0.6" />
 
       <!-- Scarf -->
-      <path
-        d="M 384,220 Q 392,224 400,222 Q 408,224 416,220"
-        stroke="#0ea5e9"
-        stroke-width="3.5"
-        fill="none"
-        stroke-linecap="round"
-      />
-      <!-- Scarf tail -->
-      <path
-        d="M 416,220 Q 420,226 418,234"
-        stroke="#0ea5e9"
-        stroke-width="3"
-        fill="none"
-        stroke-linecap="round"
-      />
+      <path d="M 381,76 Q 386,78.5 393,77 Q 400,78.5 405,76" stroke="#0ea5e9" stroke-width="2.5" fill="none" stroke-linecap="round" />
+      <path d="M 405,76 Q 407,80 406,85" stroke="#0ea5e9" stroke-width="2" fill="none" stroke-linecap="round" />
 
       <!-- Buttons -->
-      <circle cx="400" cy="232" r="1.8" fill="#1a2332" />
-      <circle cx="400" cy="242" r="1.8" fill="#1a2332" />
-      <circle cx="400" cy="252" r="1.8" fill="#1a2332" />
+      <circle cx="393" cy="82" r="1.2" fill="#1a2332" />
+      <circle cx="393" cy="88" r="1.2" fill="#1a2332" />
+      <circle cx="393" cy="94" r="1.2" fill="#1a2332" />
 
-      <!-- Application label -->
+      <!-- Applications label — starts hidden -->
       <g id="label-applications" class="iceberg-label" opacity="0">
-        <text
-          x="160"
-          y="210"
-          text-anchor="end"
-          class="label-title"
-          fill="#38bdf8"
-          filter="url(#glow)"
-        >Applications</text>
-        <text
-          x="160"
-          y="232"
-          text-anchor="end"
-          class="label-subtitle"
-          fill="#7dd3fc"
-        >ChatGPT, DALL-E, Copilot</text>
-        <text
-          x="160"
-          y="252"
-          text-anchor="end"
-          class="label-detail"
-          fill="#5eadd0"
-        >RLHF + System Messages</text>
-
-        <!-- Connector line from label to snowman -->
-        <line
-          x1="165"
-          y1="220"
-          x2="375"
-          y2="220"
-          stroke="#38bdf8"
-          stroke-width="1"
-          stroke-dasharray="4 3"
-          opacity="0.5"
-        />
+        <text x="170" y="72" text-anchor="end" class="label-title" fill="#38bdf8" filter="url(#glow)">Applications</text>
+        <text x="170" y="90" text-anchor="end" class="label-subtitle" fill="#7dd3fc">ChatGPT, DALL-E, Copilot</text>
+        <text x="170" y="107" text-anchor="end" class="label-detail" fill="#5eadd0">RLHF + System Messages</text>
+        <line x1="175" y1="80" x2="370" y2="80" stroke="#38bdf8" stroke-width="1" stroke-dasharray="4 3" opacity="0.5" />
       </g>
     </g>
 
-    <!-- ============================================ -->
-    <!-- EXTENDED: The Ocean label                    -->
-    <!-- ============================================ -->
+    <!-- ========================================= -->
+    <!-- EXTENDED: The Ocean label                 -->
+    <!-- ========================================= -->
     <g id="label-ocean" class="iceberg-label" opacity="0">
-      <text
-        x="110"
-        y="500"
-        text-anchor="middle"
-        class="label-title"
-        fill="#1e6894"
-      >The Ocean</text>
-      <text
-        x="110"
-        y="520"
-        text-anchor="middle"
-        class="label-detail"
-        fill="#17536e"
-        font-size="11"
-      >The Internet</text>
+      <text x="110" y="320" text-anchor="middle" class="label-title" fill="#1e6894">The Ocean</text>
+      <text x="110" y="338" text-anchor="middle" class="label-detail" fill="#17536e" font-size="11">The Internet</text>
     </g>
 
-    <!-- ============================================ -->
-    <!-- Waterline indicator text                     -->
-    <!-- ============================================ -->
-    <g id="waterline-label" opacity="0.4">
-      <line x1="30" y1="420" x2="130" y2="420" stroke="#38bdf8" stroke-width="0.5" stroke-dasharray="6 4" />
-      <text x="80" y="414" text-anchor="middle" fill="#38bdf8" font-size="10" class="waterline-text">waterline</text>
-      <line x1="670" y1="420" x2="770" y2="420" stroke="#38bdf8" stroke-width="0.5" stroke-dasharray="6 4" />
-      <text x="720" y="414" text-anchor="middle" fill="#38bdf8" font-size="10" class="waterline-text">waterline</text>
+    <!-- ========================================= -->
+    <!-- Waterline indicator text                  -->
+    <!-- ========================================= -->
+    <g id="waterline-label" opacity="0.35">
+      <line x1="30" y1="250" x2="130" y2="250" stroke="#38bdf8" stroke-width="0.5" stroke-dasharray="6 4" />
+      <text x="80" y="244" text-anchor="middle" fill="#38bdf8" font-size="10" class="waterline-text">waterline</text>
+      <line x1="670" y1="250" x2="770" y2="250" stroke="#38bdf8" stroke-width="0.5" stroke-dasharray="6 4" />
+      <text x="720" y="244" text-anchor="middle" fill="#38bdf8" font-size="10" class="waterline-text">waterline</text>
     </g>
   </svg>
 </div>
@@ -448,7 +315,7 @@
   .iceberg-wrapper {
     position: relative;
     width: 100%;
-    max-width: 800px;
+    max-width: 700px;
     margin: 0 auto;
   }
 
@@ -458,7 +325,6 @@
     height: auto;
   }
 
-  /* Typography for SVG labels */
   .label-title {
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
     font-size: 20px;
@@ -492,7 +358,7 @@
     text-transform: uppercase;
   }
 
-  /* Wave CSS animation (runs independently of GSAP for ambient effect) */
+  /* Wave animation */
   .wave {
     animation: wave-drift 6s ease-in-out infinite alternate;
   }
@@ -503,92 +369,39 @@
   }
 
   @keyframes wave-drift {
-    0% {
-      transform: translateX(-6px);
-    }
-    100% {
-      transform: translateX(6px);
-    }
+    0% { transform: translateX(-4px); }
+    100% { transform: translateX(4px); }
   }
 
-  /* Shark ambient swimming animation */
+  /* Shark drift animation */
   .shark {
-    animation: shark-swim 12s ease-in-out infinite alternate;
+    animation: shark-drift 14s ease-in-out infinite alternate;
   }
 
-  #shark-1 {
-    animation-duration: 14s;
+  #shark-2 { animation-duration: 18s; animation-delay: -4s; }
+  #shark-3 { animation-duration: 16s; animation-delay: -8s; }
+
+  @keyframes shark-drift {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(30px); }
   }
 
-  #shark-2 {
-    animation-duration: 18s;
-    animation-delay: -4s;
-  }
-
-  #shark-3 {
-    animation-duration: 16s;
-    animation-delay: -8s;
-  }
-
-  @keyframes shark-swim {
-    0% {
-      transform: translate(var(--shark-start-x, 0), var(--shark-start-y, 0));
-    }
-    50% {
-      transform: translate(
-        calc(var(--shark-start-x, 0) + 20px),
-        calc(var(--shark-start-y, 0) - 5px)
-      );
-    }
-    100% {
-      transform: translate(
-        calc(var(--shark-start-x, 0) + 40px),
-        calc(var(--shark-start-y, 0) + 3px)
-      );
-    }
-  }
-
-  /* Caustic light animation */
+  /* Caustic light pulse in deep water */
   .caustic-lights ellipse {
     animation: caustic-pulse 5s ease-in-out infinite alternate;
   }
-
   .caustic-lights ellipse:nth-child(2) { animation-delay: -1.5s; animation-duration: 6s; }
   .caustic-lights ellipse:nth-child(3) { animation-delay: -3s; animation-duration: 7s; }
   .caustic-lights ellipse:nth-child(4) { animation-delay: -4.5s; animation-duration: 5.5s; }
 
   @keyframes caustic-pulse {
-    0% {
-      opacity: 0.03;
-      rx: inherit;
-    }
-    100% {
-      opacity: 0.07;
-    }
+    0% { opacity: 0.025; }
+    100% { opacity: 0.06; }
   }
 
-  /* Reduced motion: kill all ambient animations */
   @media (prefers-reduced-motion: reduce) {
-    .wave,
-    .shark,
-    .caustic-lights ellipse {
+    .wave, .shark, .caustic-lights ellipse {
       animation: none;
     }
   }
 </style>
-
-<script>
-  /**
-   * Shark ambient animation using CSS custom properties
-   * to preserve the original SVG transform positions.
-   * Also records initial transforms for GSAP compatibility.
-   */
-  document.addEventListener('DOMContentLoaded', () => {
-    const sharks = document.querySelectorAll('.shark');
-    sharks.forEach((shark) => {
-      // Store original transform so CSS animations offset from base position
-      const original = shark.getAttribute('transform') || '';
-      shark.dataset.originalTransform = original;
-    });
-  });
-</script>

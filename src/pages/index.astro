@@ -428,6 +428,21 @@ import DiffusionViz from "../components/DiffusionViz.astro";
         },
       });
     });
+
+    // --- Footer fade-in ---
+    if (!prefersReduced) {
+      gsap.from(".footer", {
+        opacity: 0,
+        y: 30,
+        duration: 0.8,
+        ease: "power2.out",
+        scrollTrigger: {
+          trigger: ".footer",
+          start: "top 90%",
+          toggleActions: "play none none reverse",
+        },
+      });
+    }
   }
 
   // Initialize when DOM is ready
@@ -442,6 +457,8 @@ import DiffusionViz from "../components/DiffusionViz.astro";
 
 <style>
   /* Page-specific styles that supplement global.css */
+
+  /* Misconceptions closing section — subtle dark gradient */
   #misconceptions-section {
     background: linear-gradient(
       180deg,
@@ -451,8 +468,29 @@ import DiffusionViz from "../components/DiffusionViz.astro";
     );
   }
 
+  #misconceptions-section h2 {
+    background: linear-gradient(
+      135deg,
+      var(--text-primary) 0%,
+      var(--accent-cyan) 60%,
+      var(--accent-blue) 100%
+    );
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
   #next-token-section strong {
     color: var(--accent-cyan);
+  }
+
+  /* Next token section — subtle emphasis background */
+  #next-token-section {
+    background: radial-gradient(
+      ellipse at center,
+      rgba(14, 165, 233, 0.03) 0%,
+      transparent 70%
+    );
   }
 
   /* Ensure iceberg scroll container has enough height for scrolling */
@@ -463,5 +501,23 @@ import DiffusionViz from "../components/DiffusionViz.astro";
   #iceberg-scroll .scroll-text {
     padding-top: 20vh;
     padding-bottom: 20vh;
+  }
+
+  /* Smooth gradient transitions for deep-dive chapter */
+  #ch-beneath {
+    background: radial-gradient(
+      ellipse at 50% 100%,
+      rgba(14, 165, 233, 0.04) 0%,
+      transparent 60%
+    );
+  }
+
+  /* Diffusion section gets a subtle dark treatment */
+  #ch-diffusion {
+    background: radial-gradient(
+      ellipse at 50% 100%,
+      rgba(167, 139, 250, 0.03) 0%,
+      transparent 60%
+    );
   }
 </style>

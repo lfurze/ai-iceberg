@@ -36,7 +36,7 @@ import RLHFViz from "../components/RLHFViz.astro";
   <!-- ============================================ -->
   <!-- CHAPTER: THE ICEBERG OVERVIEW                -->
   <!-- ============================================ -->
-  <section id="main-content" aria-label="The AI Iceberg overview">
+  <section id="main-content" aria-label="The AI Iceberg overview" tabindex="-1">
     <div class="chapter-divider" id="ch-iceberg">
       <span class="chapter-number">The Big Picture</span>
       <h2 id="ch-iceberg-title">The AI Iceberg</h2>
@@ -344,7 +344,7 @@ import RLHFViz from "../components/RLHFViz.astro";
         Stay ahead of the curve. Subscribe for articles, resources, and updates
         on understanding generative AI &mdash; delivered straight to your inbox.
       </p>
-      <a href="https://subscribe.leonfurze.com/" class="cta-button" target="_blank" rel="noopener">
+      <a href="https://subscribe.leonfurze.com/" class="cta-button" target="_blank" rel="noopener noreferrer">
         Subscribe to the mailing list
       </a>
     </div>
@@ -356,12 +356,12 @@ import RLHFViz from "../components/RLHFViz.astro";
   <footer class="footer">
     <p>
       Based on the <strong>AI Iceberg</strong> model by
-      <a href="https://leonfurze.com/2023/05/18/the-ai-iceberg-understanding-chatgpt/" target="_blank" rel="noopener">Leon Furze</a>,
+      <a href="https://leonfurze.com/2023/05/18/the-ai-iceberg-understanding-chatgpt/" target="_blank" rel="noopener noreferrer">Leon Furze</a>,
       from <em>Practical AI Strategies</em> (Amba Press, 2024).
     </p>
     <p>
       Iceberg image freely usable in presentations with credit to
-      <a href="https://leonfurze.com" target="_blank" rel="noopener">leonfurze.com</a>.
+      <a href="https://leonfurze.com" target="_blank" rel="noopener noreferrer">leonfurze.com</a>.
     </p>
   </footer>
 </Layout>
@@ -757,7 +757,7 @@ import RLHFViz from "../components/RLHFViz.astro";
     display: inline-block;
     padding: 0.85rem 2rem;
     margin-top: 0.5rem;
-    background: var(--accent-cyan);
+    background: #0e7490;
     color: #fff;
     font-family: var(--font-sans);
     font-size: 0.95rem;

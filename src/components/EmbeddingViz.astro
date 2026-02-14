@@ -29,6 +29,7 @@
       <canvas id="embedding-canvas"
         role="img"
         aria-label="3D rotating visualization of word embedding space showing clusters of similar words: places like Paris, Tokyo, London; animals like dog, cat, puppy; emotions like happy, sad, love; and science terms like atom, cell, DNA. The direction from France to Paris is the same as from Japan to Tokyo, encoding the capital-of relationship."
+        aria-describedby="embed-analogy-desc"
       ></canvas>
     </div>
 
@@ -47,7 +48,7 @@
       </span>
     </div>
 
-    <div class="embed-analogy-wrap" data-embed="analogy">
+    <div class="embed-analogy-wrap" id="embed-analogy-desc" data-embed="analogy">
       <p class="embed-formula">Paris &minus; France + Japan &asymp; Tokyo</p>
       <p class="embed-analogy-explain">
         The direction from France to Paris encodes the concept <em>"capital of."</em>

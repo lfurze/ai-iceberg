@@ -70,6 +70,7 @@ const stepLabels = [
           class="diff-canvas"
           role="img"
           aria-label="Diffusion denoising visualization showing noise transforming into a snowman face on blue background"
+          aria-describedby="diff-explanations"
         ></canvas>
       </div>
 
@@ -83,7 +84,7 @@ const stepLabels = [
       </div>
 
       <!-- Explanation text for each step -->
-      <div class="diff-step-explanations">
+      <div class="diff-step-explanations" id="diff-explanations" aria-live="polite">
         <p class="diff-step-explanation active" data-diff-explain="0">
           Starting from pure random noise — no discernible pattern. This is the
           equivalent of fully diffused ink in water.

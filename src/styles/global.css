@@ -13,7 +13,7 @@
   /* Text — dark navy/teal */
   --text-primary: #1a2e3a;
   --text-secondary: #3d5a6a;
-  --text-muted: #7e9aa8;
+  --text-muted: #5a7a8a;
   --text-accent: #0891b2;
 
   /* Accent palette — Teal/cyan to match iceberg illustration */
@@ -126,6 +126,16 @@ body {
   top: var(--space-md);
 }
 
+/* --- Focus Visible (Accessibility) --- */
+*:focus-visible {
+  outline: 2px solid var(--accent-cyan);
+  outline-offset: 2px;
+}
+
+*:focus:not(:focus-visible) {
+  outline: none;
+}
+
 /* --- Typography Scale --- */
 h1,
 h2,
@@ -211,7 +221,7 @@ strong {
   flex-direction: column;
   justify-content: center;
   padding: var(--space-xl) 0;
-  opacity: 0.2;
+  opacity: 0.4;
   transition: opacity var(--duration-slow) var(--ease-out);
 }
 
